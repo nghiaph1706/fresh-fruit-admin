@@ -24,6 +24,13 @@ import SelectInput from '@/components/ui/select-input';
 import NoticeReceivedByInput from '@/components/store-notice/store-notice-received-input';
 import { getAuthCredentials } from '@/utils/auth-utils';
 import { find } from 'lodash';
+import { useSettingsQuery } from '@/data/settings';
+import { useCallback, useMemo } from 'react';
+import { useModalAction } from '@/components/ui/modal/modal.context';
+import OpenAIButton from '@/components/openAI/openAI.button';
+import { ItemProps } from '@/types';
+import StickyFooterPanel from '@/components/ui/sticky-footer-panel';
+import { StoreNoticeDescriptionSuggestions } from '@/components/store-notice/store-notice-ai-prompt';
 
 type user = {
   id: string;
@@ -60,6 +67,14 @@ export default function CreateOrUpdateStoreNoticeForm({
   const router = useRouter();
   const { t } = useTranslation();
   const { permissions } = getAuthCredentials();
+  const { locale } = router;
+  const {
+    // @ts-ignore
+    settings: { options },
+  } = useSettingsQuery({
+    language: locale!,
+  });
+  const { openModal } = useModalAction();
 
   let noticeTypes: any = [];
   let superAdmin = permissions?.includes('super_admin');
@@ -125,6 +140,22 @@ export default function CreateOrUpdateStoreNoticeForm({
     usersOrShops,
     (x: any) => x.slug === router.query.shop
   );
+
+  const noticeName = watch('notice');
+  const storeNoticeDescriptionSuggestionLists = useMemo(() => {
+    return StoreNoticeDescriptionSuggestions({ name: noticeName ?? '' });
+  }, [noticeName]);
+
+  const handleGenerateDescription = useCallback(() => {
+    openModal('GENERATE_DESCRIPTION', {
+      control,
+      name: noticeName,
+      set_value: setValue,
+      key: 'description',
+      suggestion: storeNoticeDescriptionSuggestionLists as ItemProps[],
+    });
+  }, [noticeName]);
+
   const [effective_from, expired_at] = watch(['effective_from', 'expired_at']);
   const isTranslateStoreNotice = router.locale !== Config.defaultLanguage;
   const onSubmit = async (values: FormValues) => {
@@ -162,7 +193,7 @@ export default function CreateOrUpdateStoreNoticeForm({
   };
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <div className="flex flex-wrap my-5 sm:my-8">
+      <div className="my-5 flex flex-wrap sm:my-8">
         <Description
           title={t('form:input-label-description')}
           details={`${
@@ -191,23 +222,43 @@ export default function CreateOrUpdateStoreNoticeForm({
           <Input
             label={`${t('form:input-title')}*`}
             {...register('notice')}
+            placeholder={t('form:enter-notice-heading')}
             error={t(errors.notice?.message!)}
             variant="outline"
             className="mb-5"
             disabled={isTranslateStoreNotice}
           />
 
-          <TextArea
-            label={`${t('form:input-label-description')}*`}
-            {...register('description')}
-            error={t(errors.description?.message!)}
-            variant="outline"
-            className="mb-5"
-            disabled={isTranslateStoreNotice}
-          />
+          <div className="relative">
+            {/* {options?.useAi && (
+              <div
+                onClick={handleGenerateDescription}
+                className="absolute right-0 z-10 text-sm font-medium cursor-pointer -top-1 text-accent hover:text-accent-hover"
+              >
+                Generate
+              </div>
+            )} */}
 
-          <div className="flex flex-col mb-4 sm:flex-row">
-            <div className="w-full p-0 mb-5 sm:mb-0 sm:w-1/2 sm:pe-2">
+            {options?.useAi && (
+              <OpenAIButton
+                title={t('form:button-label-description-ai')}
+                onClick={handleGenerateDescription}
+              />
+            )}
+
+            <TextArea
+              label={`${t('form:input-label-description')}*`}
+              {...register('description')}
+              placeholder={t('form:enter-notice-description')}
+              error={t(errors.description?.message!)}
+              variant="outline"
+              className="mb-5"
+              disabled={isTranslateStoreNotice}
+            />
+          </div>
+
+          <div className="mb-4 flex flex-col sm:flex-row">
+            <div className="mb-5 w-full p-0 sm:mb-0 sm:w-1/2 sm:pe-2">
               <Label>{`${t('form:store-notice-active-from')}*`}</Label>
 
               <Controller
@@ -219,7 +270,7 @@ export default function CreateOrUpdateStoreNoticeForm({
                     dateFormat="dd/MM/yyyy"
                     onChange={onChange}
                     onBlur={onBlur}
-                    selected={value}
+                    selected={value ?? new Date()}
                     selectsStart
                     minDate={new Date()}
                     maxDate={expired_at}
@@ -289,24 +340,30 @@ export default function CreateOrUpdateStoreNoticeForm({
           )}
         </Card>
       </div>
-      <div className="mb-4 text-end">
-        {initialValues && (
-          <Button
-            variant="outline"
-            onClick={router.back}
-            className="me-4"
-            type="button"
-          >
-            {t('form:button-label-back')}
-          </Button>
-        )}
+      <StickyFooterPanel className="z-0">
+        <div className="text-end">
+          {initialValues && (
+            <Button
+              variant="outline"
+              onClick={router.back}
+              className="text-sm me-4 md:text-base"
+              type="button"
+            >
+              {t('form:button-label-back')}
+            </Button>
+          )}
 
-        <Button loading={updating || creating}>
-          {initialValues
-            ? t('form:button-label-update-store-notice')
-            : t('form:button-label-add-store-notice')}
-        </Button>
-      </div>
+          <Button
+            loading={updating || creating}
+            disabled={updating || creating}
+            className="text-sm md:text-base"
+          >
+            {initialValues
+              ? t('form:button-label-update-store-notice')
+              : t('form:button-label-add-store-notice')}
+          </Button>
+        </div>
+      </StickyFooterPanel>
     </form>
   );
 }

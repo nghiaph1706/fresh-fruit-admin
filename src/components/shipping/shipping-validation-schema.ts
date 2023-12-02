@@ -9,6 +9,13 @@ export const shippingValidationSchema = yup.object().shape({
     is: (value: string) => value !== ShippingType.Free,
     then: yup
       .number()
+      // .when('type', {
+      //   is: (data: string) => data === ShippingType.Percentage,
+      //   then: yup
+      //     .number()
+      //     .min(1, 'You can offered minimum 1%.')
+      //     .max(99, 'You can offered maximum 99%.'),
+      // })
       .typeError('form:error-amount-must-number')
       .positive('form:error-amount-must-positive')
       .required('form:error-amount-required'),

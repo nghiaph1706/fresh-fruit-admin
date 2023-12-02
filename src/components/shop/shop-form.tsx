@@ -1,49 +1,64 @@
-import Button from '@/components/ui/button';
-import Input from '@/components/ui/input';
-import { Controller, useFieldArray, useForm } from 'react-hook-form';
-import { useTranslation } from 'next-i18next';
-import { yupResolver } from '@hookform/resolvers/yup';
-import Description from '@/components/ui/description';
 import Card from '@/components/common/card';
+import GooglePlacesAutocomplete from '@/components/form/google-places-autocomplete';
+import { EditIcon } from '@/components/icons/edit';
+import * as socialIcons from '@/components/icons/social';
+import Button from '@/components/ui/button';
+import Description from '@/components/ui/description';
 import FileInput from '@/components/ui/file-input';
+import Input from '@/components/ui/input';
+import Label from '@/components/ui/label';
+import SelectInput from '@/components/ui/select-input';
+import SwitchInput from '@/components/ui/switch-input';
 import TextArea from '@/components/ui/text-area';
-import { shopValidationSchema } from './shop-validation-schema';
-import { getFormattedImage } from '@/utils/get-formatted-image';
+import { Config } from '@/config';
+import { useSettingsQuery } from '@/data/settings';
 import { useCreateShopMutation, useUpdateShopMutation } from '@/data/shop';
 import {
   BalanceInput,
+  ItemProps,
   ShopSettings,
   ShopSocialInput,
   UserAddressInput,
 } from '@/types';
-import GooglePlacesAutocomplete from '@/components/form/google-places-autocomplete';
-import Label from '@/components/ui/label';
-import { getIcon } from '@/utils/get-icon';
-import SelectInput from '@/components/ui/select-input';
-import * as socialIcons from '@/components/icons/social';
-import omit from 'lodash/omit';
-import SwitchInput from '@/components/ui/switch-input';
 import { getAuthCredentials } from '@/utils/auth-utils';
-import { SUPER_ADMIN, STORE_OWNER } from '@/utils/constants';
+import { STORE_OWNER, SUPER_ADMIN } from '@/utils/constants';
+import { getFormattedImage } from '@/utils/get-formatted-image';
+import { getIcon } from '@/utils/get-icon';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { join, split } from 'lodash';
+import omit from 'lodash/omit';
+import { useTranslation } from 'next-i18next';
+import { useRouter } from 'next/router';
+import { useCallback, useMemo, useState } from 'react';
+import { Controller, useFieldArray, useForm } from 'react-hook-form';
+import OpenAIButton from '../openAI/openAI.button';
+import { useAtom } from 'jotai';
+import { locationAtom } from '@/utils/use-location';
+import { useModalAction } from '../ui/modal/modal.context';
+import { shopValidationSchema } from './shop-validation-schema';
+import { formatSlug } from '@/utils/use-slug';
+import StickyFooterPanel from '@/components/ui/sticky-footer-panel';
+import { socialIcon } from '@/settings/site.settings';
+import { ShopDescriptionSuggestion } from '@/components/shop/shop-ai-prompt';
 
-const socialIcon = [
-  {
-    value: 'FacebookIcon',
-    label: 'Facebook',
-  },
-  {
-    value: 'InstagramIcon',
-    label: 'Instagram',
-  },
-  {
-    value: 'TwitterIcon',
-    label: 'Twitter',
-  },
-  {
-    value: 'YouTubeIcon',
-    label: 'Youtube',
-  },
-];
+// const socialIcon = [
+//   {
+//     value: 'FacebookIcon',
+//     label: 'Facebook',
+//   },
+//   {
+//     value: 'InstagramIcon',
+//     label: 'Instagram',
+//   },
+//   {
+//     value: 'TwitterIcon',
+//     label: 'Twitter',
+//   },
+//   {
+//     value: 'YouTubeIcon',
+//     label: 'Youtube',
+//   },
+// ];
 
 export const updatedIcons = socialIcon.map((item: any) => {
   item.label = (
@@ -63,6 +78,7 @@ export const updatedIcons = socialIcon.map((item: any) => {
 
 type FormValues = {
   name: string;
+  slug: string;
   description: string;
   cover_image: any;
   logo: any;
@@ -72,6 +88,7 @@ type FormValues = {
 };
 
 const ShopForm = ({ initialValues }: { initialValues?: any }) => {
+  const [location] = useAtom(locationAtom);
   const { mutate: createShop, isLoading: creating } = useCreateShopMutation();
   const { mutate: updateShop, isLoading: updating } = useUpdateShopMutation();
   // const { permissions } = getAuthCredentials();
@@ -82,6 +99,8 @@ const ShopForm = ({ initialValues }: { initialValues?: any }) => {
     handleSubmit,
     formState: { errors },
     getValues,
+    watch,
+    setValue,
     control,
   } = useForm<FormValues>({
     shouldUnregister: true,
@@ -107,11 +126,43 @@ const ShopForm = ({ initialValues }: { initialValues?: any }) => {
       : {}),
     resolver: yupResolver(shopValidationSchema),
   });
+  const router = useRouter();
+
+  const { openModal } = useModalAction();
+  const { locale } = router;
+  const {
+    // @ts-ignore
+    settings: { options },
+  } = useSettingsQuery({
+    language: locale!,
+  });
+
+  const generateName = watch('name');
+  const shopDescriptionSuggestionLists = useMemo(() => {
+    return ShopDescriptionSuggestion({ name: generateName ?? '' });
+  }, [generateName]);
+
+  const handleGenerateDescription = useCallback(() => {
+    openModal('GENERATE_DESCRIPTION', {
+      control,
+      name: generateName,
+      set_value: setValue,
+      key: 'description',
+      suggestion: shopDescriptionSuggestionLists as ItemProps[],
+    });
+  }, [generateName]);
+
+  const slugAutoSuggest = formatSlug(watch('name'));
   const { t } = useTranslation();
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'settings.socials',
   });
+
+  const [isSlugDisable, setIsSlugDisable] = useState<boolean>(true);
+  const isSlugEditable =
+    (router?.query?.action === 'edit' || router?.pathname === '/[shop]/edit') &&
+    router?.locale === Config.defaultLanguage;
   function onSubmit(values: FormValues) {
     const settings = {
       ...values?.settings,
@@ -145,6 +196,8 @@ const ShopForm = ({ initialValues }: { initialValues?: any }) => {
       });
     }
   }
+
+  const isGoogleMapActive = options?.useGoogleMap;
 
   const coverImageInformation = (
     <span>
@@ -193,13 +246,52 @@ const ShopForm = ({ initialValues }: { initialValues?: any }) => {
               variant="outline"
               className="mb-5"
               error={t(errors.name?.message!)}
+              required
             />
-            <TextArea
-              label={t('form:input-label-description')}
-              {...register('description')}
-              variant="outline"
-              error={t(errors.description?.message!)}
-            />
+
+            {isSlugEditable ? (
+              <div className="relative mb-5">
+                <Input
+                  label={t('form:input-label-slug')}
+                  {...register('slug')}
+                  error={t(errors.slug?.message!)}
+                  variant="outline"
+                  disabled={isSlugDisable}
+                />
+                <button
+                  className="absolute top-[27px] right-px z-0 flex h-[46px] w-11 items-center justify-center rounded-tr rounded-br border-l border-solid border-border-base bg-white px-2 text-body transition duration-200 hover:text-heading focus:outline-none"
+                  type="button"
+                  title={t('common:text-edit')}
+                  onClick={() => setIsSlugDisable(false)}
+                >
+                  <EditIcon width={14} />
+                </button>
+              </div>
+            ) : (
+              <Input
+                label={t('form:input-label-slug')}
+                {...register('slug')}
+                value={slugAutoSuggest}
+                variant="outline"
+                className="mb-5"
+                disabled
+              />
+            )}
+
+            <div className="relative">
+              {options?.useAi && (
+                <OpenAIButton
+                  title={t('form:button-label-description-ai')}
+                  onClick={handleGenerateDescription}
+                />
+              )}
+              <TextArea
+                label={t('form:input-label-description')}
+                {...register('description')}
+                variant="outline"
+                error={t(errors.description?.message!)}
+              />
+            </div>
           </Card>
         </div>
         <div className="my-5 flex flex-wrap border-b border-dashed border-gray-300 pb-8 sm:my-8">
@@ -216,6 +308,7 @@ const ShopForm = ({ initialValues }: { initialValues?: any }) => {
               variant="outline"
               className="mb-5"
               error={t(errors.balance?.payment_info?.name?.message!)}
+              required
             />
             <Input
               label={t('form:input-label-account-holder-email')}
@@ -223,6 +316,7 @@ const ShopForm = ({ initialValues }: { initialValues?: any }) => {
               variant="outline"
               className="mb-5"
               error={t(errors.balance?.payment_info?.email?.message!)}
+              required
             />
             <Input
               label={t('form:input-label-bank-name')}
@@ -230,12 +324,14 @@ const ShopForm = ({ initialValues }: { initialValues?: any }) => {
               variant="outline"
               className="mb-5"
               error={t(errors.balance?.payment_info?.bank?.message!)}
+              required
             />
             <Input
               label={t('form:input-label-account-number')}
               {...register('balance.payment_info.account')}
               variant="outline"
               error={t(errors.balance?.payment_info?.account?.message!)}
+              required
             />
           </Card>
         </div>
@@ -247,6 +343,33 @@ const ShopForm = ({ initialValues }: { initialValues?: any }) => {
           />
 
           <Card className="w-full sm:w-8/12 md:w-2/3">
+            {isGoogleMapActive && (
+              <div className="mb-5">
+                <Label>{t('form:input-label-autocomplete')}</Label>
+                <Controller
+                  control={control}
+                  name="settings.location"
+                  render={({ field: { onChange, value } }) => (
+                    <GooglePlacesAutocomplete
+                      // @ts-ignore
+                      onChange={(location: any) => {
+                        onChange(location);
+                        setValue('address.country', location?.country);
+                        setValue('address.city', location?.city);
+                        setValue('address.state', location?.state);
+                        setValue('address.zip', location?.zip);
+                        setValue(
+                          'address.street_address',
+                          location?.street_address
+                        );
+                      }}
+                      data={getValues('settings.location')!}
+                      onChangeCurrentLocation={onChange}
+                    />
+                  )}
+                />
+              </div>
+            )}
             <Input
               label={t('form:input-label-country')}
               {...register('address.country')}
@@ -308,7 +431,7 @@ const ShopForm = ({ initialValues }: { initialValues?: any }) => {
                   control={control}
                   disabled={permissions?.includes(SUPER_ADMIN)}
                 />
-                <Label className="mb-0">
+                <Label className="!mb-0.5">
                   {t('form:input-enable-notification')}
                 </Label>
               </div>
@@ -325,25 +448,13 @@ const ShopForm = ({ initialValues }: { initialValues?: any }) => {
           />
 
           <Card className="w-full sm:w-8/12 md:w-2/3">
-            <div className="mb-5">
-              <Label>{t('form:input-label-autocomplete')}</Label>
-              <Controller
-                control={control}
-                name="settings.location"
-                render={({ field: { onChange } }) => (
-                  <GooglePlacesAutocomplete
-                    onChange={onChange}
-                    data={getValues('settings.location')!}
-                  />
-                )}
-              />
-            </div>
             <Input
               label={t('form:input-label-contact')}
               {...register('settings.contact')}
               variant="outline"
               className="mb-5"
               error={t(errors.settings?.contact?.message!)}
+              required
             />
             <Input
               label={t('form:input-label-website')}
@@ -351,12 +462,24 @@ const ShopForm = ({ initialValues }: { initialValues?: any }) => {
               variant="outline"
               className="mb-5"
               error={t(errors.settings?.website?.message!)}
+              required
             />
+          </Card>
+        </div>
+
+        <div className="my-5 flex flex-wrap border-b border-dashed border-gray-300 pb-8 sm:my-8">
+          <Description
+            title={t('form:social-settings')}
+            details={t('form:social-settings-helper-text')}
+            className="w-full px-0 pb-5 sm:w-4/12 sm:py-8 sm:pe-4 md:w-1/3 md:pe-5"
+          />
+
+          <Card className="w-full sm:w-8/12 md:w-2/3">
             <div>
-              {fields.map(
+              {fields?.map(
                 (item: ShopSocialInput & { id: string }, index: number) => (
                   <div
-                    className="border-b border-dashed border-border-200 py-5 first:mt-5 first:border-t last:border-b-0 md:py-8 md:first:mt-10"
+                    className="border-b border-dashed border-border-200 py-5 first:mt-0 first:border-t-0 first:pt-0 last:border-b-0 md:py-8 md:first:mt-0"
                     key={item.id}
                   >
                     <div className="grid grid-cols-1 gap-5 sm:grid-cols-5">
@@ -382,7 +505,11 @@ const ShopForm = ({ initialValues }: { initialValues?: any }) => {
                         label={t('form:input-label-url')}
                         variant="outline"
                         {...register(`settings.socials.${index}.url` as const)}
+                        error={t(
+                          errors?.settings?.socials?.[index]?.url?.message!
+                        )}
                         defaultValue={item.url!} // make sure to set up defaultValue
+                        required
                       />
                       <button
                         onClick={() => {
@@ -401,23 +528,25 @@ const ShopForm = ({ initialValues }: { initialValues?: any }) => {
             <Button
               type="button"
               onClick={() => append({ icon: '', url: '' })}
-              className="w-full sm:w-auto"
+              className="w-full text-sm sm:w-auto md:text-base"
             >
               {t('form:button-label-add-social')}
             </Button>
           </Card>
         </div>
 
-        <div className="mb-5 text-end">
-          <Button
-            loading={creating || updating}
-            disabled={creating || updating}
-          >
-            {initialValues
-              ? t('form:button-label-update')
-              : t('form:button-label-save')}
-          </Button>
-        </div>
+        <StickyFooterPanel className="z-0">
+          <div className="mb-5 text-end">
+            <Button
+              loading={creating || updating}
+              disabled={creating || updating}
+            >
+              {initialValues
+                ? t('form:button-label-update')
+                : t('form:button-label-save')}
+            </Button>
+          </div>
+        </StickyFooterPanel>
       </form>
     </>
   );

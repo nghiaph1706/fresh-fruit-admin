@@ -20,6 +20,12 @@ import TextArea from '@/components/ui/text-area';
 import RadioCard from '@/components/ui/radio-card/radio-card';
 import Checkbox from '@/components/ui/checkbox/checkbox';
 import { useCreateTypeMutation, useUpdateTypeMutation } from '@/data/type';
+import { EditIcon } from '@/components/icons/edit';
+import { Config } from '@/config';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { join, split } from 'lodash';
+import { formatSlug } from '@/utils/use-slug';
+import StickyFooterPanel from '@/components/ui/sticky-footer-panel';
 
 export const updatedIcons = typeIconList.map((item: any) => {
   item.label = (
@@ -104,7 +110,8 @@ type BannerInput = {
 };
 
 type FormValues = {
-  name?: string | null;
+  name: string;
+  slug?: string | null;
   icon?: any;
   promotional_sliders: AttachmentInput[];
   banners: BannerInput[];
@@ -117,6 +124,10 @@ type IProps = {
 export default function CreateOrUpdateTypeForm({ initialValues }: IProps) {
   const router = useRouter();
   const { t } = useTranslation();
+  const [isSlugDisable, setIsSlugDisable] = useState<boolean>(true);
+  const isSlugEditable =
+    router?.query?.action === 'edit' &&
+    router?.locale === Config.defaultLanguage;
   const {
     register,
     control,
@@ -153,10 +164,12 @@ export default function CreateOrUpdateTypeForm({ initialValues }: IProps) {
 
   const { mutate: createType, isLoading: creating } = useCreateTypeMutation();
   const { mutate: updateType, isLoading: updating } = useUpdateTypeMutation();
+  const slugAutoSuggest = formatSlug(watch('name'));
   const onSubmit = (values: FormValues) => {
     const input = {
       language: router.locale,
       name: values.name!,
+      slug: values.slug!,
       icon: values.icon?.value,
       settings: {
         isHome: values?.settings?.isHome,
@@ -204,7 +217,7 @@ export default function CreateOrUpdateTypeForm({ initialValues }: IProps) {
             initialValues
               ? t('form:item-description-update')
               : t('form:item-description-add')
-          } ${t('form:type-description-help-text')}`}
+          } ${t('form:group-description-help-text')}`}
           className="w-full px-0 pb-5 sm:w-4/12 sm:py-8 sm:pe-4 md:w-1/3 md:pe-5"
         />
 
@@ -217,6 +230,34 @@ export default function CreateOrUpdateTypeForm({ initialValues }: IProps) {
             className="mb-5"
             // disabled={[].includes(Config.defaultLanguage)}
           />
+          {isSlugEditable ? (
+            <div className="relative mb-5">
+              <Input
+                label={t('form:input-label-slug')}
+                {...register('slug')}
+                error={t(errors.slug?.message!)}
+                variant="outline"
+                disabled={isSlugDisable}
+              />
+              <button
+                className="absolute top-[27px] right-px z-0 flex h-[46px] w-11 items-center justify-center rounded-tr rounded-br border-l border-solid border-border-base bg-white px-2 text-body transition duration-200 hover:text-heading focus:outline-none"
+                type="button"
+                title={t('common:text-edit')}
+                onClick={() => setIsSlugDisable(false)}
+              >
+                <EditIcon width={14} />
+              </button>
+            </div>
+          ) : (
+            <Input
+              label={t('form:input-label-slug')}
+              {...register('slug')}
+              value={slugAutoSuggest}
+              variant="outline"
+              className="mb-5"
+              disabled
+            />
+          )}
 
           <div className="mb-5">
             <Label>{t('form:input-label-select-icon')}</Label>
@@ -225,6 +266,7 @@ export default function CreateOrUpdateTypeForm({ initialValues }: IProps) {
               control={control}
               options={updatedIcons}
               isClearable={true}
+              placeholder="Select Icon"
             />
           </div>
         </Card>
@@ -377,24 +419,30 @@ export default function CreateOrUpdateTypeForm({ initialValues }: IProps) {
         </Card>
       </div>
 
-      <div className="mb-4 text-end">
-        {initialValues && (
-          <Button
-            variant="outline"
-            onClick={router.back}
-            className="me-4"
-            type="button"
-          >
-            {t('form:button-label-back')}
-          </Button>
-        )}
+      <StickyFooterPanel className="z-0">
+        <div className="text-end">
+          {initialValues && (
+            <Button
+              variant="outline"
+              onClick={router.back}
+              className="text-sm me-4 md:text-base"
+              type="button"
+            >
+              {t('form:button-label-back')}
+            </Button>
+          )}
 
-        <Button loading={creating || updating}>
-          {initialValues
-            ? t('form:button-label-update-group')
-            : t('form:button-label-add-group')}
-        </Button>
-      </div>
+          <Button
+            loading={creating || updating}
+            disabled={creating || updating}
+            className="text-sm md:text-base"
+          >
+            {initialValues
+              ? t('form:button-label-update-group')
+              : t('form:button-label-add-group')}
+          </Button>
+        </div>
+      </StickyFooterPanel>
     </form>
   );
 }

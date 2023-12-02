@@ -33,6 +33,9 @@ export const useCreateAuthorMutation = () => {
     onSettled: () => {
       queryClient.invalidateQueries(API_ENDPOINTS.AUTHORS);
     },
+    onError: (error: any) => {
+      toast.error(t(`common:${error?.response?.data.message}`));
+    },
   });
 };
 
@@ -48,19 +51,56 @@ export const useDeleteAuthorMutation = () => {
     onSettled: () => {
       queryClient.invalidateQueries(API_ENDPOINTS.AUTHORS);
     },
+    onError: (error: any) => {
+      toast.error(t(`common:${error?.response?.data.message}`));
+    },
   });
 };
 
 export const useUpdateAuthorMutation = () => {
   const { t } = useTranslation();
+  const router = useRouter();
   const queryClient = useQueryClient();
   return useMutation(AuthorClient.update, {
-    onSuccess: () => {
+    onSuccess: async (data) => {
+      const generateRedirectUrl = router.query.shop
+        ? `/${router.query.shop}${Routes.author.list}`
+        : Routes.author.list;
+      await router.push(
+        `${generateRedirectUrl}/${data?.slug}/edit`,
+        undefined,
+        {
+          locale: Config.defaultLanguage,
+        }
+      );
+      toast.success(t('common:successfully-updated'));
+    },
+    // onSuccess: () => {
+    //   toast.success(t('common:successfully-updated'));
+    // },
+    // Always refetch after error or success:
+    onSettled: () => {
+      queryClient.invalidateQueries(API_ENDPOINTS.AUTHORS);
+    },
+    onError: (error: any) => {
+      toast.error(t(`common:${error?.response?.data.message}`));
+    },
+  });
+};
+
+export const useUpdateAuthorMutationInList = () => {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  return useMutation(AuthorClient.update, {
+    onSuccess: async () => {
       toast.success(t('common:successfully-updated'));
     },
     // Always refetch after error or success:
     onSettled: () => {
       queryClient.invalidateQueries(API_ENDPOINTS.AUTHORS);
+    },
+    onError: (error: any) => {
+      toast.error(t(`common:${error?.response?.data.message}`));
     },
   });
 };

@@ -8,7 +8,12 @@ export type Ref = any;
 export const Select = React.forwardRef<Ref, Props>((props, ref) => {
   const { isRTL } = useIsRTL();
   return (
-    <ReactSelect ref={ref} styles={selectStyles} isRtl={isRTL} {...props} />
+    <ReactSelect
+      ref={ref}
+      styles={selectStyles}
+      isRtl={isRTL}
+      {...props}
+    />
   );
 });
 

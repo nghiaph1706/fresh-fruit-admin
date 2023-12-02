@@ -21,9 +21,11 @@ import { useRouter } from 'next/router';
 import PrivateRoute from '@/utils/private-route';
 import { Config } from '@/config';
 
-const Noop: React.FC = ({ children }) => <>{children}</>;
+const Noop: React.FC<{ children?: React.ReactNode }> = ({ children }) => (
+  <>{children}</>
+);
 
-const AppSettings: React.FC = (props) => {
+const AppSettings: React.FC<{ children?: React.ReactNode }> = (props) => {
   const { query, locale } = useRouter();
   const { settings, loading, error } = useSettingsQuery({ language: locale! });
   if (loading) return <PageLoader />;
@@ -43,11 +45,10 @@ const CustomApp = ({ Component, pageProps }: AppPropsWithLayout) => {
 
   const { locale } = useRouter();
   const dir = Config.getDirection(locale);
-
   return (
     <div dir={dir}>
       <QueryClientProvider client={queryClient}>
-        <Hydrate state={pageProps.dehydratedState}>
+        <Hydrate state={pageProps?.dehydratedState}>
           <AppSettings>
             <UIProvider>
               <ModalProvider>

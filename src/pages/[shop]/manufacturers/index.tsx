@@ -11,13 +11,24 @@ import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { Routes } from '@/config/routes';
 import ShopLayout from '@/components/layouts/shop';
-import { adminOwnerAndStaffOnly } from '@/utils/auth-utils';
+import {
+  adminOnly,
+  adminOwnerAndStaffOnly,
+  getAuthCredentials,
+  hasAccess,
+} from '@/utils/auth-utils';
 import { useRouter } from 'next/router';
 import { SortOrder } from '@/types';
 import { useManufacturersQuery } from '@/data/manufacturer';
 import { Config } from '@/config';
+import { useMeQuery } from '@/data/user';
+import { useShopQuery } from '@/data/shop';
+import PageHeading from '@/components/common/page-heading';
 
 export default function Manufacturers() {
+  const router = useRouter();
+  const { permissions } = getAuthCredentials();
+  const { data: me } = useMeQuery();
   const { t } = useTranslation();
   const {
     query: { shop },
@@ -36,6 +47,12 @@ export default function Manufacturers() {
       page,
       language: locale,
     });
+
+  const { data: shopData } = useShopQuery({
+    slug: shop as string,
+  });
+  const { id: shop_id } = shopData ?? {};
+
   if (loading) return <Loader text={t('common:text-loading')} />;
   if (error) return <ErrorMessage message={error.message} />;
 
@@ -47,17 +64,26 @@ export default function Manufacturers() {
     setPage(current);
   }
 
+  if (
+    !hasAccess(adminOnly, permissions) &&
+    !me?.shops?.map((shop) => shop.id).includes(shop_id) &&
+    me?.managed_shop?.id != shop_id
+  ) {
+    router.replace(Routes.dashboard);
+  }
+
   return (
     <>
       <Card className="mb-8 flex flex-col items-center xl:flex-row">
         <div className="mb-4 md:w-1/3 xl:mb-0">
-          <h1 className="text-xl font-semibold text-heading">
-            {t('common:text-manufacturers-publications')}
-          </h1>
+          <PageHeading title={t('common:text-manufacturers-publications')} />
         </div>
 
         <div className="flex w-full flex-col items-center space-y-4 ms-auto md:flex-row md:space-y-0 xl:w-2/3">
-          <Search onSearch={handleSearch} />
+          <Search
+            onSearch={handleSearch}
+            placeholderText={t('form:input-placeholder-search-name')}
+          />
 
           {locale === Config.defaultLanguage && (
             <LinkButton

@@ -9,10 +9,10 @@ import { useIsRTL } from '@/utils/locals';
 import { useState } from 'react';
 import TitleWithSort from '@/components/ui/title-with-sort';
 import { Category, MappedPaginatorInfo } from '@/types';
-import { Config } from '@/config';
-import Link from '@/components/ui/link';
 import { Routes } from '@/config/routes';
 import LanguageSwitcher from '@/components/ui/lang-action/action';
+import { NoDataFound } from '@/components/icons/no-data-found';
+import { siteSettings } from '@/settings/site.settings';
 
 export type IProps = {
   categories: Category[] | undefined;
@@ -31,7 +31,6 @@ const CategoryList = ({
   const { t } = useTranslation();
   const rowExpandable = (record: any) => record.children?.length;
   const { alignLeft, alignRight } = useIsRTL();
-
   const [sortingObj, setSortingObj] = useState<{
     sort: SortOrder;
     column: string | null;
@@ -60,8 +59,9 @@ const CategoryList = ({
       title: t('table:table-item-id'),
       dataIndex: 'id',
       key: 'id',
-      align: 'center',
-      width: 60,
+      align: alignLeft,
+      width: 120,
+      render: (id: number) => `#${t('table:table-item-id')}: ${id}`,
     },
     {
       title: (
@@ -77,8 +77,24 @@ const CategoryList = ({
       dataIndex: 'name',
       key: 'name',
       align: alignLeft,
-      width: 150,
+      width: 180,
       onHeaderCell: () => onHeaderClick('name'),
+      render: (name: string, { image }: { image: any }) => {
+        return (
+          <div className="flex items-center">
+            <div className="relative aspect-square h-10 w-10 shrink-0 overflow-hidden rounded border border-border-200/80 bg-gray-100 me-2.5">
+              <Image
+                src={image?.thumbnail ?? siteSettings.product.placeholder}
+                alt={name}
+                fill
+                priority={true}
+                sizes="(max-width: 768px) 100vw"
+              />
+            </div>
+            <span className="truncate font-medium">{name}</span>
+          </div>
+        );
+      },
     },
     {
       title: t('table:table-item-details'),
@@ -87,28 +103,6 @@ const CategoryList = ({
       ellipsis: true,
       align: alignLeft,
       width: 200,
-    },
-    {
-      title: t('table:table-item-image'),
-      dataIndex: 'image',
-      key: 'image',
-      align: 'center',
-      width: 180,
-
-      render: (image: any, { name }: { name: string }) => {
-        if (!image?.thumbnail) return null;
-
-        return (
-          <Image
-            src={image?.thumbnail ?? '/'}
-            alt={name}
-            layout="fixed"
-            width={40}
-            height={40}
-            className="overflow-hidden rounded"
-          />
-        );
-      },
     },
     {
       title: t('table:table-item-icon'),
@@ -130,20 +124,21 @@ const CategoryList = ({
       },
     },
     {
-      title: t('table:table-item-slug'),
+      title: (
+        <TitleWithSort
+          title={t('table:table-item-slug')}
+          ascending={
+            sortingObj.sort === SortOrder.Asc && sortingObj.column === 'slug'
+          }
+          isActive={sortingObj.column === 'slug'}
+        />
+      ),
+      className: 'cursor-pointer',
       dataIndex: 'slug',
       key: 'slug',
-      align: 'center',
-      ellipsis: true,
+      align: alignLeft,
       width: 150,
-      render: (slug: any) => (
-        <div
-          className="overflow-hidden truncate whitespace-nowrap"
-          title={slug}
-        >
-          {slug}
-        </div>
-      ),
+      onHeaderCell: () => onHeaderClick('slug'),
     },
     {
       title: t('table:table-item-group'),
@@ -165,7 +160,7 @@ const CategoryList = ({
       dataIndex: 'slug',
       key: 'actions',
       align: alignRight,
-      width: 290,
+      width: 120,
       render: (slug: string, record: Category) => (
         <LanguageSwitcher
           slug={slug}
@@ -183,12 +178,20 @@ const CategoryList = ({
         <Table
           //@ts-ignore
           columns={columns}
-          emptyText={t('table:empty-table-data')}
+          emptyText={() => (
+            <div className="flex flex-col items-center py-7">
+              <NoDataFound className="w-52" />
+              <div className="mb-1 pt-6 text-base font-semibold text-heading">
+                {t('table:empty-table-data')}
+              </div>
+              <p className="text-[13px]">{t('table:empty-table-sorry-text')}</p>
+            </div>
+          )}
           data={categories}
           rowKey="id"
           scroll={{ x: 1000 }}
           expandable={{
-            expandedRowRender: () => '',
+            expandedRowRender: () => ' ',
             rowExpandable: rowExpandable,
           }}
         />

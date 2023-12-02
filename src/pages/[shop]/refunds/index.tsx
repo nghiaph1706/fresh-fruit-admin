@@ -4,7 +4,12 @@ import ErrorMessage from '@/components/ui/error-message';
 import Loader from '@/components/ui/loader/loader';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { adminOwnerAndStaffOnly } from '@/utils/auth-utils';
+import {
+  adminOnly,
+  adminOwnerAndStaffOnly,
+  getAuthCredentials,
+  hasAccess,
+} from '@/utils/auth-utils';
 import { LIMIT } from '@/utils/constants';
 import { useShopQuery } from '@/data/shop';
 import { useRefundsQuery } from '@/data/refund';
@@ -12,8 +17,14 @@ import RefundList from '@/components/refund/refund-list';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
 import { SortOrder } from '@/types';
+import { Routes } from '@/config/routes';
+import { useMeQuery } from '@/data/user';
+import PageHeading from '@/components/common/page-heading';
 
 export default function RefundsPage() {
+  const router = useRouter();
+  const { permissions } = getAuthCredentials();
+  const { data: me } = useMeQuery();
   const {
     query: { shop },
     locale,
@@ -47,13 +58,19 @@ export default function RefundsPage() {
     setPage(current);
   }
 
+  if (
+    !hasAccess(adminOnly, permissions) &&
+    !me?.shops?.map((shop) => shop.id).includes(shopId) &&
+    me?.managed_shop?.id != shopId
+  ) {
+    router.replace(Routes.dashboard);
+  }
+
   return (
     <>
       <Card className="mb-8 flex flex-col items-center justify-between md:flex-row">
         <div className="mb-4 md:mb-0 md:w-1/4">
-          <h1 className="text-lg font-semibold text-heading">
-            {t('common:sidebar-nav-item-refunds')}
-          </h1>
+          <PageHeading title={t('common:sidebar-nav-item-refunds')} />
         </div>
       </Card>
 

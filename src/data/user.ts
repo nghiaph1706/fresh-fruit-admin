@@ -7,11 +7,53 @@ import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { toast } from 'react-toastify';
 import { API_ENDPOINTS } from './client/api-endpoints';
 import { userClient } from './client/user';
-import { User, QueryOptionsType, UserPaginator } from '@/types';
+import {
+  User,
+  QueryOptionsType,
+  UserPaginator,
+  UserQueryOptions,
+  LicensedDomainPaginator,
+  LicenseAdditionalData,
+} from '@/types';
 import { mapPaginatorData } from '@/utils/data-mappers';
+import axios from 'axios';
+import { setEmailVerified } from '@/utils/auth-utils';
+import { type } from 'os';
 
 export const useMeQuery = () => {
-  return useQuery<User, Error>([API_ENDPOINTS.ME], userClient.me);
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  return useQuery<User, Error>([API_ENDPOINTS.ME], userClient.me, {
+    retry: false,
+
+    onSuccess: () => {
+      if (router.pathname === Routes.verifyLicense) {
+        router.replace(Routes.dashboard);
+      }
+      if (router.pathname === Routes.verifyEmail) {
+        setEmailVerified(true);
+        router.replace(Routes.dashboard);
+      }
+    },
+
+    onError: (err) => {
+      if (axios.isAxiosError(err)) {
+        if (err.response?.status === 417) {
+          router.replace(Routes.verifyLicense);
+          return;
+        }
+
+        if (err.response?.status === 409) {
+          setEmailVerified(false);
+          router.replace(Routes.verifyEmail);
+          return;
+        }
+        queryClient.clear();
+        router.replace(Routes.login);
+      }
+    },
+  });
 };
 
 export function useLogin() {
@@ -26,7 +68,9 @@ export const useLogoutMutation = () => {
     onSuccess: () => {
       Cookies.remove(AUTH_CRED);
       router.replace(Routes.login);
-      toast.success(t('common:successfully-logout'));
+      toast.success(t('common:successfully-logout'), {
+        toastId: 'logoutSuccess',
+      });
     },
   });
 };
@@ -37,7 +81,9 @@ export const useRegisterMutation = () => {
 
   return useMutation(userClient.register, {
     onSuccess: () => {
-      toast.success(t('common:successfully-register'));
+      toast.success(t('common:successfully-register'), {
+        toastId: 'successRegister',
+      });
     },
     // Always refetch after error or success:
     onSettled: () => {
@@ -60,13 +106,63 @@ export const useUpdateUserMutation = () => {
     },
   });
 };
+export const useUpdateUserEmailMutation = () => {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  return useMutation(userClient.updateEmail, {
+    onSuccess: () => {
+      toast.success(t('common:successfully-updated'));
+    },
+    onError: (error) => {
+      const {
+        response: { data },
+      }: any = error ?? {};
+
+      toast.error(data?.message);
+    },
+    // Always refetch after error or success:
+    onSettled: () => {
+      queryClient.invalidateQueries(API_ENDPOINTS.ME);
+      queryClient.invalidateQueries(API_ENDPOINTS.USERS);
+    },
+  });
+};
 
 export const useChangePasswordMutation = () => {
   return useMutation(userClient.changePassword);
 };
 
+
 export const useForgetPasswordMutation = () => {
   return useMutation(userClient.forgetPassword);
+};
+export const useResendVerificationEmail = () => {
+  const { t } = useTranslation('common');
+  return useMutation(userClient.resendVerificationEmail, {
+    onSuccess: () => {
+      toast.success(t('common:PICKBAZAR_MESSAGE.EMAIL_SENT_SUCCESSFUL'));
+    },
+    onError: () => {
+      toast(t('common:PICKBAZAR_MESSAGE.EMAIL_SENT_FAILED'));
+    },
+  });
+};
+
+export const useLicenseKeyMutation = () => {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const router = useRouter();
+  return useMutation(userClient.addLicenseKey, {
+    onSuccess: () => {
+      toast.success(t('common:successfully-updated'));
+      setTimeout(() => {
+        router.reload();
+      }, 1000);
+    },
+    onError: () => {
+      toast.error(t('common:PICKBAZAR_MESSAGE.INVALID_LICENSE_KEY'));
+    },
+  });
 };
 
 export const useVerifyForgetPasswordTokenMutation = () => {
@@ -76,6 +172,8 @@ export const useVerifyForgetPasswordTokenMutation = () => {
 export const useResetPasswordMutation = () => {
   return useMutation(userClient.resetPassword);
 };
+
+
 
 export const useMakeOrRevokeAdminMutation = () => {
   const queryClient = useQueryClient();
@@ -104,6 +202,9 @@ export const useBlockUserMutation = () => {
     onSettled: () => {
       queryClient.invalidateQueries(API_ENDPOINTS.USERS);
       queryClient.invalidateQueries(API_ENDPOINTS.STAFFS);
+      queryClient.invalidateQueries(API_ENDPOINTS.ADMIN_LIST);
+      queryClient.invalidateQueries(API_ENDPOINTS.CUSTOMERS);
+      queryClient.invalidateQueries(API_ENDPOINTS.VENDORS_LIST);
     },
   });
 };
@@ -120,6 +221,9 @@ export const useUnblockUserMutation = () => {
     onSettled: () => {
       queryClient.invalidateQueries(API_ENDPOINTS.USERS);
       queryClient.invalidateQueries(API_ENDPOINTS.STAFFS);
+      queryClient.invalidateQueries(API_ENDPOINTS.ADMIN_LIST);
+      queryClient.invalidateQueries(API_ENDPOINTS.CUSTOMERS);
+      queryClient.invalidateQueries(API_ENDPOINTS.VENDORS_LIST);
     },
   });
 };
@@ -181,3 +285,74 @@ export const useAdminsQuery = (params: Partial<QueryOptionsType>) => {
     error,
   };
 };
+
+export const useVendorsQuery = (params: Partial<UserQueryOptions>) => {
+  const { data, isLoading, error } = useQuery<UserPaginator, Error>(
+    [API_ENDPOINTS.VENDORS_LIST, params],
+    () => userClient.fetchVendors(params),
+    {
+      keepPreviousData: true,
+    }
+  );
+
+  return {
+    vendors: data?.data ?? [],
+    paginatorInfo: mapPaginatorData(data as any),
+    loading: isLoading,
+    error,
+  };
+};
+
+export const useCustomersQuery = (params: Partial<UserQueryOptions>) => {
+  const { data, isLoading, error } = useQuery<UserPaginator, Error>(
+    [API_ENDPOINTS.CUSTOMERS, params],
+    () => userClient.fetchCustomers(params),
+    {
+      keepPreviousData: true,
+    }
+  );
+
+  return {
+    customers: data?.data ?? [],
+    paginatorInfo: mapPaginatorData(data as any),
+    loading: isLoading,
+    error,
+  };
+};
+
+
+export const useMyStaffsQuery = (params: Partial<UserQueryOptions & { shop_id: string }>) => {
+  const { data, isLoading, error } = useQuery<UserPaginator, Error>(
+    [API_ENDPOINTS.MY_STAFFS, params],
+    () => userClient.getMyStaffs(params),
+    {
+      keepPreviousData: true,
+    }
+  );
+
+  return {
+    myStaffs: data?.data ?? [],
+    paginatorInfo: mapPaginatorData(data as any),
+    loading: isLoading,
+    error,
+  };
+};
+
+
+export const useAllStaffsQuery = (params: Partial<UserQueryOptions>) => {
+  const { data, isLoading, error } = useQuery<UserPaginator, Error>(
+    [API_ENDPOINTS.ALL_STAFFS, params],
+    () => userClient.getAllStaffs(params),
+    {
+      keepPreviousData: true,
+    }
+  );
+
+  return {
+    allStaffs: data?.data ?? [],
+    paginatorInfo: mapPaginatorData(data as any),
+    loading: isLoading,
+    error,
+  };
+};
+

@@ -9,7 +9,7 @@ import { useUploadMutation } from '@/data/upload';
 import Image from 'next/image';
 import { zipPlaceholder } from '@/utils/placeholders';
 import { ACCEPTED_FILE_TYPES } from '@/utils/constants';
-import { processFileWithName } from '../product/form-utils';
+// import { processFileWithName } from '../product/form-utils';
 
 const getPreviewImage = (value: any) => {
   let images: any[] = [];
@@ -24,13 +24,20 @@ export default function Uploader({
   multiple,
   acceptFile,
   helperText,
+  maxSize,
 }: any) {
   const { t } = useTranslation();
   const [files, setFiles] = useState<Attachment[]>(getPreviewImage(value));
   const { mutate: upload, isLoading: loading } = useUploadMutation();
   const [error, setError] = useState<string | null>(null);
   const { getRootProps, getInputProps } = useDropzone({
-    ...(!acceptFile ? { accept: 'image/*' } : { accept: ACCEPTED_FILE_TYPES }),
+    ...(!acceptFile
+      ? {
+          accept: {
+            'image/*': ['.jpg', '.jpeg', '.png', '.webp'],
+          },
+        }
+      : { ...ACCEPTED_FILE_TYPES }),
     multiple,
     onDrop: async (acceptedFiles) => {
       if (acceptedFiles.length) {
@@ -65,6 +72,7 @@ export default function Uploader({
         );
       }
     },
+    maxSize: maxSize,
 
     onDropRejected: (fileRejections) => {
       fileRejections.forEach((file) => {
@@ -93,6 +101,7 @@ export default function Uploader({
       'bmp',
       'jpg',
       'jpeg',
+      'webp',
       'gif',
       'png',
       'eps',
@@ -101,7 +110,9 @@ export default function Uploader({
     // let filename, fileType, isImage;
     if (file && file.id) {
       // const processedFile = processFileWithName(file);
-      const splitArray = file?.file_name?.split('.');
+      const splitArray = file?.file_name
+        ? file?.file_name.split('.')
+        : file?.thumbnail?.split('.');
       const fileType = splitArray?.pop(); // it will pop the last item from the fileSplitName arr which is the file ext
       const filename = splitArray?.join('.'); // it will join the array with dot, which restore the original filename
       const isImage = file?.thumbnail && imgTypes.includes(fileType); // check if the original filename has the img ext
@@ -123,7 +134,7 @@ export default function Uploader({
         >
           {/* {file?.thumbnail && isImage ? ( */}
           {isImage ? (
-            // <div className="flex h-16 w-16 min-w-0 items-center justify-center overflow-hidden">
+            // <div className="flex items-center justify-center w-16 h-16 min-w-0 overflow-hidden">
             //   <Image
             //     src={file.thumbnail}
             //     width={56}
@@ -135,8 +146,9 @@ export default function Uploader({
               <Image
                 src={file.thumbnail}
                 alt={filename}
-                layout="fill"
-                objectFit="contain"
+                fill
+                sizes="(max-width: 768px) 100vw"
+                className="object-contain"
               />
             </figure>
           ) : (
@@ -160,14 +172,14 @@ export default function Uploader({
               </p>
             </div>
           )}
-          {multiple ? (
-            <button
-              className="absolute top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-xs text-light shadow-xl outline-none end-1"
-              onClick={() => handleDelete(file.thumbnail)}
-            >
-              <CloseIcon width={10} height={10} />
-            </button>
-          ) : null}
+          {/* {multiple ? (
+          ) : null} */}
+          <button
+            className="absolute top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-xs text-light shadow-xl outline-none end-1"
+            onClick={() => handleDelete(file.thumbnail)}
+          >
+            <CloseIcon width={10} height={10} />
+          </button>
         </div>
       );
     }
@@ -208,7 +220,7 @@ export default function Uploader({
           )}
         </p>
         {error && (
-          <p className="mt-4 text-center text-sm text-body text-red-600">
+          <p className="mt-4 text-center text-sm text-red-600 text-body">
             {error}
           </p>
         )}

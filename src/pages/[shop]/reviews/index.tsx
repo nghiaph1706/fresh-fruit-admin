@@ -8,11 +8,22 @@ import { SortOrder } from '@/types';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useReviewsQuery } from '@/data/review';
-import { adminAndOwnerOnly } from '@/utils/auth-utils';
+import {
+  adminAndOwnerOnly,
+  adminOnly,
+  getAuthCredentials,
+  hasAccess,
+} from '@/utils/auth-utils';
 import { useShopQuery } from '@/data/shop';
 import { useRouter } from 'next/router';
+import { Routes } from '@/config/routes';
+import { useMeQuery } from '@/data/user';
+import PageHeading from '@/components/common/page-heading';
 
 export default function Reviews() {
+  const router = useRouter();
+  const { permissions } = getAuthCredentials();
+  const { data: me } = useMeQuery();
   const [page, setPage] = useState(1);
   const { t } = useTranslation();
   const [orderBy, setOrder] = useState('created_at');
@@ -42,13 +53,19 @@ export default function Reviews() {
     setPage(current);
   }
 
+  if (
+    !hasAccess(adminOnly, permissions) &&
+    !me?.shops?.map((shop) => shop.id).includes(shopId) &&
+    me?.managed_shop?.id != shopId
+  ) {
+    router.replace(Routes.dashboard);
+  }
+
   return (
     <>
       <Card className="mb-8 flex flex-col">
         <div className="flex w-full flex-col items-center md:flex-row">
-          <h1 className="text-xl font-semibold text-heading">
-            {t('form:input-label-reviews')}
-          </h1>
+          <PageHeading title={t('form:input-label-reviews')} />
         </div>
       </Card>
       <ReviewList

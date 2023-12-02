@@ -12,10 +12,9 @@ import Avatar from '@/components/common/avatar';
 import { siteSettings } from '@/settings/site.settings';
 import { Conversations } from '@/types';
 import MessageNotFound from '@/components/message/views/no-message-found';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useWindowSize } from '@/utils/use-window-size';
 import { RESPONSIVE_WIDTH } from '@/utils/constants';
-import { useState } from 'react';
 import {
   offset,
   flip,
@@ -26,6 +25,7 @@ import {
 import { ArrowDown } from '@/components/icons/arrow-down';
 import { useMeQuery } from '@/data/user';
 import { adminOnly, getAuthCredentials, hasAccess } from '@/utils/auth-utils';
+import { Message } from '@/types';
 
 dayjs.extend(relativeTime);
 dayjs.extend(utc);
@@ -66,6 +66,7 @@ const UserMessageView = ({
   const { width } = useWindowSize();
   const [visible, setVisible] = useState(false);
   const { data, isLoading: meLoading, error: meError } = useMeQuery();
+  const messagesEndRef = useRef(null);
   const { permissions } = getAuthCredentials();
   let permission = hasAccess(adminOnly, permissions);
   const { x, y, reference, floating, strategy, update, refs } = useFloating({
@@ -73,6 +74,14 @@ const UserMessageView = ({
     placement: 'bottom',
     middleware: [offset(-80), flip(), shift()],
   });
+
+  // default scroll to bottom
+  const defaultScrollToBottom = () => {
+    //@ts-ignore
+    messagesEndRef?.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+  // useEffect(defaultScrollToBottom, [messages, loading]);
+
   // scroll to bottom
   useEffect(() => {
     const chatBody = document.getElementById('chatBody');
@@ -126,14 +135,14 @@ const UserMessageView = ({
     <>
       <div
         id={id}
-        className="relative flex-auto overflow-y-auto overflow-x-hidden px-6 pt-10 pb-14"
+        className="relative h-full flex-auto flex-grow overflow-y-auto overflow-x-hidden py-16"
+        ref={reference}
         style={{
           maxHeight:
             width >= RESPONSIVE_WIDTH
               ? 'calc(100vh - 336px)'
               : 'calc(100vh - 300px)',
         }}
-        ref={reference}
         {...rest}
       >
         <div
@@ -153,19 +162,19 @@ const UserMessageView = ({
         >
           <ArrowDown height="14" width="14" className="m-auto" />
         </div>
-         {/* render loader */}
+        {/* render loader */}
         {children}
         {/* render content */}
         {isSuccess ? (
           <>
             {!isEmpty(messages) ? (
               <div className="space-y-6">
-                {messages?.map((item: any, key: number) => {
+                {messages?.map((item: Message, key: number) => {
                   const { body, created_at, user_id, conversation } = item;
                   const checkUser = Number(data?.id) === Number(user_id);
                   let avatarUrl = !permission
-                    ? conversation?.user?.profile?.avatar?.thumbnail
-                    : item?.conversation?.shop?.logo?.thumbnail;
+                    ? conversation?.user?.profile?.avatar?.original
+                    : item?.conversation?.shop?.logo?.original;
                   return (
                     <div
                       className={`flex w-full gap-x-3 ${
@@ -174,16 +183,23 @@ const UserMessageView = ({
                       key={key}
                     >
                       {checkUser ? null : (
-                        <div className="w-10">
+                        <div className="relative h-10 w-10 shrink-0">
                           <Avatar
-                            src={avatarUrl ?? siteSettings?.avatar?.placeholder}
+                            src={avatarUrl}
                             {...rest}
-                            alt="avatar"
+                            name="avatar"
+                            // className="relative h-full w-full border-0 bg-muted-black text-base font-medium text-white"
+                            className={cn(
+                              'relative h-full w-full border-0',
+                              avatarUrl
+                                ? ''
+                                : 'bg-muted-black text-base font-medium text-white'
+                            )}
                           />
                         </div>
                       )}
                       <div
-                        className={`w-full sm:w-2/4 ${
+                        className={`w-full sm:w-3/4 ${
                           checkUser ? 'text-right' : 'text-left'
                         }`}
                       >
@@ -214,6 +230,7 @@ const UserMessageView = ({
         ) : (
           ''
         )}
+        <div ref={messagesEndRef} />
       </div>
     </>
   );

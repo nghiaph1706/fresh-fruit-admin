@@ -6,7 +6,7 @@ import LinkButton from '@/components/ui/link-button';
 import { useState } from 'react';
 import ErrorMessage from '@/components/ui/error-message';
 import Loader from '@/components/ui/loader/loader';
-import { SortOrder } from '@/types';
+import { SortOrder, Type } from '@/types';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { Routes } from '@/config/routes';
@@ -15,7 +15,7 @@ import { adminOnly } from '@/utils/auth-utils';
 import { useCategoriesQuery } from '@/data/category';
 import { useRouter } from 'next/router';
 import { Config } from '@/config';
-
+import PageHeading from '@/components/common/page-heading';
 export default function Categories() {
   const { locale } = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
@@ -52,18 +52,19 @@ export default function Categories() {
       <Card className="mb-8 flex flex-col">
         <div className="flex w-full flex-col items-center md:flex-row">
           <div className="mb-4 md:mb-0 md:w-1/4">
-            <h1 className="text-xl font-semibold text-heading">
-              {t('form:input-label-categories')}
-            </h1>
+            <PageHeading title={t('form:input-label-categories')} />
           </div>
 
-          <div className="ms-auto flex w-full flex-col items-center space-y-4 md:flex-row md:space-y-0 xl:w-3/4">
-            <Search onSearch={handleSearch} />
+          <div className="flex w-full flex-col items-center space-y-4 ms-auto md:flex-row md:space-y-0 xl:w-3/4">
+            <Search
+              onSearch={handleSearch}
+              placeholderText={t('form:input-placeholder-search-name')}
+            />
 
             <TypeFilter
               className="md:ms-6"
-              onTypeFilter={({ slug }: { slug: string }) => {
-                setType(slug);
+              onTypeFilter={(type: Type) => {
+                setType(type?.slug!);
                 setPage(1);
               }}
             />
@@ -71,7 +72,7 @@ export default function Categories() {
             {locale === Config.defaultLanguage && (
               <LinkButton
                 href={`${Routes.category.create}`}
-                className="md:ms-6 h-12 w-full md:w-auto"
+                className="h-12 w-full md:w-auto md:ms-6"
               >
                 <span className="block md:hidden xl:block">
                   + {t('form:button-label-add-categories')}

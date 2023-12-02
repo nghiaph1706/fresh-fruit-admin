@@ -20,6 +20,13 @@ export const useCreateCouponMutation = () => {
       });
       toast.success(t('common:successfully-created'));
     },
+    onError: (error: any) => {
+      const {data, status} =  error?.response;
+      if (status === 422) {
+        const errorMessage:any = Object.values(data).flat();
+        toast.error(errorMessage[0]);
+      }
+    },
     // Always refetch after error or success:
     onSettled: () => {
       queryClient.invalidateQueries(API_ENDPOINTS.COUPONS);
@@ -49,9 +56,13 @@ export const useUpdateCouponMutation = () => {
   return useMutation(couponClient.update, {
     onSuccess: async (data) => {
       toast.success(t('common:successfully-updated'));
-      await Router.replace(`${Routes.coupon.list}/${data?.code}/edit`, undefined, {
-        locale,
-      });
+      await Router.replace(
+        `${Routes.coupon.list}/${data?.code}/edit`,
+        undefined,
+        {
+          locale,
+        }
+      );
     },
     // Always refetch after error or success:
     onSettled: () => {
@@ -63,7 +74,6 @@ export const useUpdateCouponMutation = () => {
 export const useVerifyCouponMutation = () => {
   return useMutation(couponClient.verify);
 };
-
 
 export const useCouponQuery = ({
   code,

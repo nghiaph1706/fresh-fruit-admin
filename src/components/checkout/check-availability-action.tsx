@@ -16,7 +16,9 @@ import { useTranslation } from 'next-i18next';
 import { useVerifyCheckoutMutation } from '@/data/checkout';
 import { Address } from '@/types';
 
-export const CheckAvailabilityAction: React.FC = (props) => {
+export const CheckAvailabilityAction: React.FC<{
+  children?: React.ReactNode;
+}> = (props) => {
   const { t } = useTranslation('common');
 
   const [billing_address] = useAtom(billingAddressAtom);
@@ -71,9 +73,9 @@ export const CheckAvailabilityAction: React.FC = (props) => {
     <>
       <Button
         loading={loading}
-        className="w-full mt-5"
+        className="mt-5 w-full"
         onClick={handleVerifyCheckout}
-        disabled={isEmpty}
+        disabled={isEmpty || loading}
         {...props}
       />
       {errorMessage && (

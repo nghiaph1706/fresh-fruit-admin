@@ -14,8 +14,14 @@ import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import SelectInput from '@/components/ui/select-input';
 import ShopLayout from '@/components/layouts/shop';
+import { NoDataFound } from '@/components/icons/no-data-found';
 import { useIsRTL } from '@/utils/locals';
-import { adminOwnerAndStaffOnly } from '@/utils/auth-utils';
+import {
+  adminOnly,
+  adminOwnerAndStaffOnly,
+  getAuthCredentials,
+  hasAccess,
+} from '@/utils/auth-utils';
 import {
   useDownloadInvoiceMutation,
   useUpdateOrderMutation,
@@ -26,6 +32,10 @@ import { DownloadIcon } from '@/components/icons/download-icon';
 import OrderViewHeader from '@/components/order/order-view-header';
 import { ORDER_STATUS } from '@/utils/order-status';
 import OrderStatusProgressBox from '@/components/order/order-status-progress-box';
+import { Routes } from '@/config/routes';
+import { useShopQuery } from '@/data/shop';
+import { useMeQuery } from '@/data/user';
+import { useFormatPhoneNumber } from '@/utils/format-phone-number';
 
 type FormValues = {
   order_status: any;
@@ -33,6 +43,13 @@ type FormValues = {
 export default function OrderDetailsPage() {
   const { t } = useTranslation();
   const { locale, query } = useRouter();
+  const router = useRouter();
+  const { permissions } = getAuthCredentials();
+  const { data: me } = useMeQuery();
+  const { data: shopData } = useShopQuery({
+    slug: query?.shop as string,
+  });
+  const shopId = shopData?.id!;
   const { alignLeft, alignRight, isRTL } = useIsRTL();
   const { mutate: updateOrder, isLoading: updating } = useUpdateOrderMutation();
   const {
@@ -100,6 +117,11 @@ export default function OrderDetailsPage() {
       amount: order?.sales_tax!,
     }
   );
+
+  const phoneNumber = useFormatPhoneNumber({
+    customer_contact: order?.customer_contact as string,
+  });
+
   if (loading) return <Loader text={t('common:text-loading')} />;
   if (error) return <ErrorMessage message={error.message} />;
 
@@ -112,7 +134,6 @@ export default function OrderDetailsPage() {
         <Image
           src={image?.thumbnail ?? siteSettings.product.placeholder}
           alt="alt text"
-          layout="fixed"
           width={50}
           height={50}
         />
@@ -147,10 +168,18 @@ export default function OrderDetailsPage() {
     },
   ];
 
+  if (
+    !hasAccess(adminOnly, permissions) &&
+    !me?.shops?.map((shop) => shop.id).includes(shopId) &&
+    me?.managed_shop?.id != shopId
+  ) {
+    router.replace(Routes.dashboard);
+  }
+
   return (
     <div>
       <Card>
-        <div className="mb-6 -mr-5 -ml-5 -mt-5 md:-mr-8 md:-ml-8  md:-mt-8">
+        <div className="mb-6 -mt-5 -ml-5 -mr-5 md:-mr-8 md:-ml-8 md:-mt-8">
           <OrderViewHeader order={order} wrapperClassName="px-8 py-4" />
         </div>
         <div className="flex w-full">
@@ -168,34 +197,33 @@ export default function OrderDetailsPage() {
             {t('form:input-label-order-id')} - {order?.tracking_number}
           </h3>
 
-          {order?.order_status !== OrderStatus.FAILED &&
-            order?.order_status !== OrderStatus.CANCELLED && (
-              <form
-                onSubmit={handleSubmit(ChangeStatus)}
-                className="flex w-full items-start ms-auto lg:w-2/4"
-              >
-                <div className="z-20 w-full me-5">
-                  <SelectInput
-                    name="order_status"
-                    control={control}
-                    getOptionLabel={(option: any) => option.name}
-                    getOptionValue={(option: any) => option.status}
-                    options={ORDER_STATUS.slice(0, 6)}
-                    placeholder={t('form:input-placeholder-order-status')}
-                  />
+          {![OrderStatus.FAILED, OrderStatus.CANCELLED, OrderStatus.REFUNDED].includes(order?.order_status! as OrderStatus) && (
+            <form
+              onSubmit={handleSubmit(ChangeStatus)}
+              className="flex w-full items-start ms-auto lg:w-2/4"
+            >
+              <div className="z-20 w-full me-5">
+                <SelectInput
+                  name="order_status"
+                  control={control}
+                  getOptionLabel={(option: any) => t(option.name)}
+                  getOptionValue={(option: any) => option.status}
+                  options={ORDER_STATUS.slice(0, 6)}
+                  placeholder={t('form:input-placeholder-order-status')}
+                />
 
-                  <ValidationError message={t(errors?.order_status?.message)} />
-                </div>
-                <Button loading={updating}>
-                  <span className="hidden sm:block">
-                    {t('form:button-label-change-status')}
-                  </span>
-                  <span className="block sm:hidden">
-                    {t('form:form:button-label-change')}
-                  </span>
-                </Button>
-              </form>
-            )}
+                <ValidationError message={t(errors?.order_status?.message)} />
+              </div>
+              <Button loading={updating}>
+                <span className="hidden sm:block">
+                  {t('form:button-label-change-status')}
+                </span>
+                <span className="block sm:hidden">
+                  {t('form:form:button-label-change')}
+                </span>
+              </Button>
+            </form>
+          )}
         </div>
 
         <div className="my-5 flex items-center justify-center lg:my-10">
@@ -210,7 +238,17 @@ export default function OrderDetailsPage() {
             <Table
               //@ts-ignore
               columns={columns}
-              emptyText={t('table:empty-table-data')}
+              emptyText={() => (
+                <div className="flex flex-col items-center py-7">
+                  <NoDataFound className="w-52" />
+                  <div className="mb-1 pt-6 text-base font-semibold text-heading">
+                    {t('table:empty-table-data')}
+                  </div>
+                  <p className="text-[13px]">
+                    {t('table:empty-table-sorry-text')}
+                  </p>
+                </div>
+              )}
               //@ts-ignore
               data={order?.products!}
               rowKey="id"
@@ -255,9 +293,7 @@ export default function OrderDetailsPage() {
               {order?.billing_address && (
                 <span>{formatAddress(order.billing_address)}</span>
               )}
-              {order?.customer_contact && (
-                <span>{order?.customer_contact}</span>
-              )}
+              {order?.customer_contact && <span>{phoneNumber}</span>}
             </div>
           </div>
 
@@ -271,9 +307,7 @@ export default function OrderDetailsPage() {
               {order?.shipping_address && (
                 <span>{formatAddress(order.shipping_address)}</span>
               )}
-              {order?.customer_contact && (
-                <span>{order?.customer_contact}</span>
-              )}
+              {order?.customer_contact && <span>{phoneNumber}</span>}
             </div>
           </div>
         </div>

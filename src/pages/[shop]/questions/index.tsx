@@ -8,12 +8,23 @@ import { SortOrder } from '@/types';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useQuestionsQuery } from '@/data/question';
-import { adminAndOwnerOnly } from '@/utils/auth-utils';
+import {
+  adminAndOwnerOnly,
+  adminOnly,
+  getAuthCredentials,
+  hasAccess,
+} from '@/utils/auth-utils';
 import { useRouter } from 'next/router';
 import { useShopQuery } from '@/data/shop';
+import { Routes } from '@/config/routes';
+import { useMeQuery } from '@/data/user';
+import PageHeading from '@/components/common/page-heading';
 
 export default function Questions() {
   const [page, setPage] = useState(1);
+  const router = useRouter();
+  const { permissions } = getAuthCredentials();
+  const { data: me } = useMeQuery();
   const { t } = useTranslation();
   const [orderBy, setOrder] = useState('created_at');
   const [sortedBy, setColumn] = useState<SortOrder>(SortOrder.Desc);
@@ -38,13 +49,19 @@ export default function Questions() {
     setPage(current);
   }
 
+  if (
+    !hasAccess(adminOnly, permissions) &&
+    !me?.shops?.map((shop) => shop.id).includes(shopId) &&
+    me?.managed_shop?.id != shopId
+  ) {
+    router.replace(Routes.dashboard);
+  }
+
   return (
     <>
       <Card className="mb-8 flex flex-col">
         <div className="flex w-full flex-col items-center md:flex-row">
-          <h1 className="text-xl font-semibold text-heading">
-            {t('common:sidebar-nav-item-questions')}
-          </h1>
+          <PageHeading title={t('common:sidebar-nav-item-questions')} />
         </div>
       </Card>
       <QuestionList

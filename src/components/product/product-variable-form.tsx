@@ -1,5 +1,13 @@
 import Input from '@/components/ui/input';
-import { useFieldArray, useFormContext } from 'react-hook-form';
+import {
+  useFormContext,
+  useWatch,
+  FieldArrayWithId,
+  FieldValues,
+  FieldArrayPath,
+  FieldArray,
+  FieldArrayMethodProps,
+} from 'react-hook-form';
 import Button from '@/components/ui/button';
 import Description from '@/components/ui/description';
 import Card from '@/components/common/card';
@@ -8,7 +16,7 @@ import Title from '@/components/ui/title';
 import Checkbox from '@/components/ui/checkbox/checkbox';
 import SelectInput from '@/components/ui/select-input';
 import { useEffect } from 'react';
-import { Product } from '@/types';
+import { Product, Settings } from '@/types';
 import { useTranslation } from 'next-i18next';
 import { useAttributesQuery } from '@/data/attributes';
 import FileInput from '@/components/ui/file-input';
@@ -16,17 +24,46 @@ import ValidationError from '@/components/ui/form-validation-error';
 import { getCartesianProduct, filterAttributes } from './form-utils';
 import { useRouter } from 'next/router';
 import { Config } from '@/config';
+import { useSettingsQuery } from '@/data/settings';
+import { isObject } from 'lodash';
+import Alert from '@/components/ui/alert';
 
 type IProps = {
   initialValues?: Product | null;
   shopId: string | undefined;
+  settings: Settings | undefined;
+  name: string;
+  fields: FieldArrayWithId<FieldValues, FieldArrayPath<FieldValues>, 'id'>[];
+  append: (
+    value:
+      | Partial<FieldArray<FieldValues, FieldArrayPath<FieldValues>>>
+      | Partial<FieldArray<FieldValues, FieldArrayPath<FieldValues>>>[],
+    options?: FieldArrayMethodProps
+  ) => void;
+  remove: (index?: number | number[]) => void;
 };
 
-export default function ProductVariableForm({ shopId, initialValues }: IProps) {
+export default function ProductVariableForm({
+  shopId,
+  initialValues,
+  settings,
+  name,
+  fields,
+  append,
+  remove,
+}: IProps) {
   const { t } = useTranslation();
   const { locale } = useRouter();
+  const {
+    // @ts-ignore
+    settings: { options },
+  } = useSettingsQuery({
+    language: locale!,
+  });
+  const upload_max_filesize = options?.server_info?.upload_max_filesize / 1024;
+
   const { attributes, loading } = useAttributesQuery({
-    shop_id: initialValues ? initialValues.shop_id : shopId,
+    shop_id: initialValues ? initialValues?.shop_id : shopId,
     language: locale,
   });
   const {
@@ -37,14 +74,11 @@ export default function ProductVariableForm({ shopId, initialValues }: IProps) {
     getValues,
     formState: { errors },
   } = useFormContext();
-  // This field array will keep all the attribute dropdown fields
-  const { fields, append, remove } = useFieldArray({
-    shouldUnregister: true,
+  const variations = useWatch({
     control,
-    name: 'variations',
+    name: name,
   });
-  const variations = watch('variations');
-  const cartesianProduct = getCartesianProduct(getValues('variations'));
+  const cartesianProduct = getCartesianProduct(getValues(name));
   return (
     <div className="my-5 flex flex-wrap sm:my-8">
       <Description
@@ -54,15 +88,16 @@ export default function ProductVariableForm({ shopId, initialValues }: IProps) {
             ? t('form:item-description-update')
             : t('form:item-description-choose')
         } ${t('form:form-description-variation-product-info')}`}
-        className="sm:pe-4 md:pe-5 w-full px-0 pb-5 sm:w-4/12 sm:py-8 md:w-1/3"
+        className="w-full px-0 pb-5 sm:w-4/12 sm:py-8 sm:pe-4 md:w-1/3 md:pe-5"
       />
       <Card className="w-full p-0 sm:w-8/12 md:w-2/3 md:p-0">
-        <div className="mb-5 border-t border-dashed border-border-200 md:mb-8">
-          <Title className="mb-0 mt-8 px-5 text-center text-lg uppercase md:px-8">
+        <div className="mb-5 md:mb-8">
+          <Title className="mt-8 mb-0 px-5 text-center text-lg uppercase md:px-8">
             {t('form:form-title-options')}
           </Title>
           <div>
             {fields?.map((field: any, index: number) => {
+              let watchAttr = watch(`variations.${index}.attribute`)?.values;
               return (
                 <div
                   key={field.id}
@@ -73,14 +108,15 @@ export default function ProductVariableForm({ shopId, initialValues }: IProps) {
                       {t('form:form-title-options')} {index + 1}
                     </Title>
                     <button
-                      onClick={() => remove(index)}
+                      onClick={() => {
+                        return remove(index);
+                      }}
                       type="button"
                       className="text-sm text-red-500 transition-colors duration-200 hover:text-red-700 focus:outline-none"
                     >
                       {t('form:button-label-remove')}
                     </button>
                   </div>
-
                   <div className="grid grid-cols-fit gap-5">
                     <div className="mt-5">
                       <Label>{t('form:input-label-attribute-name')}*</Label>
@@ -104,7 +140,7 @@ export default function ProductVariableForm({ shopId, initialValues }: IProps) {
                         defaultValue={field.value}
                         getOptionLabel={(option: any) => option.value}
                         getOptionValue={(option: any) => option.id}
-                        options={watch(`variations.${index}.attribute`)?.values}
+                        options={watchAttr}
                       />
                     </div>
                   </div>
@@ -115,7 +151,7 @@ export default function ProductVariableForm({ shopId, initialValues }: IProps) {
 
           <div className="px-5 md:px-8">
             <Button
-              disabled={fields.length === attributes?.length}
+              disabled={fields?.length === attributes?.length}
               onClick={(e: any) => {
                 e.preventDefault();
                 append({ attribute: '', value: [] });
@@ -137,14 +173,19 @@ export default function ProductVariableForm({ shopId, initialValues }: IProps) {
                   return (
                     <div
                       key={`fieldAttributeValues-${index}`}
-                      className="mb-5 mt-5 border-b border-dashed border-border-200 p-5 last:mb-8 last:border-0 md:p-8 md:last:pb-0"
+                      className="mt-5 mb-5 border-b border-dashed border-border-200 p-5 last:mb-8 last:border-0 md:p-8 md:last:pb-0"
                     >
                       <Title className="mb-8 !text-lg">
                         {t('form:form-title-variant')}:{' '}
                         <span className="font-normal text-blue-600">
                           {Array.isArray(fieldAttributeValue)
                             ? fieldAttributeValue?.map((a) => a.value).join('/')
-                            : fieldAttributeValue.value}
+                            : fieldAttributeValue?.title}
+
+                          {isObject(fieldAttributeValue)
+                            ? // @ts-ignore
+                              fieldAttributeValue?.value
+                            : ''}
                         </span>
                       </Title>
                       <TitleAndOptionsInput
@@ -165,6 +206,7 @@ export default function ProductVariableForm({ shopId, initialValues }: IProps) {
                           type="number"
                           {...register(`variation_options.${index}.price`)}
                           error={t(
+                            // @ts-ignore
                             errors.variation_options?.[index]?.price?.message
                           )}
                           variant="outline"
@@ -175,6 +217,7 @@ export default function ProductVariableForm({ shopId, initialValues }: IProps) {
                           type="number"
                           {...register(`variation_options.${index}.sale_price`)}
                           error={t(
+                            // @ts-ignore
                             errors.variation_options?.[index]?.sale_price
                               ?.message
                           )}
@@ -190,6 +233,7 @@ export default function ProductVariableForm({ shopId, initialValues }: IProps) {
                           }
                           {...register(`variation_options.${index}.sku`)}
                           error={t(
+                            // @ts-ignore
                             errors.variation_options?.[index]?.sku?.message
                           )}
                           variant="outline"
@@ -200,6 +244,7 @@ export default function ProductVariableForm({ shopId, initialValues }: IProps) {
                           type="number"
                           {...register(`variation_options.${index}.quantity`)}
                           error={t(
+                            // @ts-ignore
                             errors.variation_options?.[index]?.quantity?.message
                           )}
                           variant="outline"
@@ -207,14 +252,19 @@ export default function ProductVariableForm({ shopId, initialValues }: IProps) {
                         />
                       </div>
                       <div>
-                        <Label>{t('form:input-label-image')}</Label>
+                        <Label>
+                          {t('form:input-label-image')}
+                          {' and size should not be more than'} &nbsp;
+                          {upload_max_filesize}
+                          {'MB '}
+                        </Label>
                         <FileInput
                           name={`variation_options.${index}.image`}
                           control={control}
                           multiple={false}
                         />
                       </div>
-                      <div className="mb-5 mt-5">
+                      <div className="mt-5 mb-5">
                         <Checkbox
                           {...register(`variation_options.${index}.is_digital`)}
                           label={t('form:input-label-is-digital')}
@@ -232,9 +282,17 @@ export default function ProductVariableForm({ shopId, initialValues }: IProps) {
                             />
                             <ValidationError
                               message={t(
+                                // @ts-ignore
                                 errors?.variation_options?.[index]
                                   ?.digital_file_input?.message
                               )}
+                            />
+
+                            <Alert
+                              message={t('form:info-about-digital-product')}
+                              variant="info"
+                              closeable={false}
+                              className="mt-5 mb-5"
                             />
 
                             <input
@@ -246,10 +304,11 @@ export default function ProductVariableForm({ shopId, initialValues }: IProps) {
                           </div>
                         )}
                       </div>
-                      <div className="mb-5 mt-5">
+                      <div className="mt-5 mb-5">
                         <Checkbox
                           {...register(`variation_options.${index}.is_disable`)}
                           error={t(
+                            // @ts-ignore
                             errors.variation_options?.[index]?.is_disable
                               ?.message
                           )}

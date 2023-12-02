@@ -16,31 +16,45 @@ import ValidationError from '@/components/ui/form-validation-error';
 import { getIcon } from '@/utils/get-icon';
 import SelectInput from '@/components/ui/select-input';
 import * as socialIcons from '@/components/icons/social';
-import { AttachmentInput, Author, ShopSocialInput } from '@/types';
+import { AttachmentInput, Author, ItemProps, ShopSocialInput } from '@/types';
 import { useShopQuery } from '@/data/shop';
+import { EditIcon } from '@/components/icons/edit';
+import { Config } from '@/config';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { join, split } from 'lodash';
 import {
   useCreateAuthorMutation,
   useUpdateAuthorMutation,
 } from '@/data/author';
+import { useSettingsQuery } from '@/data/settings';
+import { useModalAction } from '@/components/ui/modal/modal.context';
 
-const socialIcon = [
-  {
-    value: 'FacebookIcon',
-    label: 'Facebook',
-  },
-  {
-    value: 'InstagramIcon',
-    label: 'Instagram',
-  },
-  {
-    value: 'TwitterIcon',
-    label: 'Twitter',
-  },
-  {
-    value: 'YouTubeIcon',
-    label: 'Youtube',
-  },
-];
+import OpenAIButton from '@/components/openAI/openAI.button';
+import { formatSlug } from '@/utils/use-slug';
+import StickyFooterPanel from '@/components/ui/sticky-footer-panel';
+import { socialIcon } from '@/settings/site.settings';
+import {
+  AuthorBioSuggestion,
+  AuthorQuoteSuggestion,
+} from '@/components/author/author-ai-prompt';
+// const socialIcon = [
+//   {
+//     value: 'FacebookIcon',
+//     label: 'Facebook',
+//   },
+//   {
+//     value: 'InstagramIcon',
+//     label: 'Instagram',
+//   },
+//   {
+//     value: 'TwitterIcon',
+//     label: 'Twitter',
+//   },
+//   {
+//     value: 'YouTubeIcon',
+//     label: 'Youtube',
+//   },
+// ];
 
 export const updatedIcons = socialIcon.map((item: any) => {
   item.label = (
@@ -60,6 +74,7 @@ export const updatedIcons = socialIcon.map((item: any) => {
 
 type FormValues = {
   name: string;
+  slug: string;
   bio: string;
   quote: string;
   death: string;
@@ -80,6 +95,10 @@ export default function CreateOrUpdateAuthorForm({ initialValues }: IProps) {
   const router = useRouter();
   const { locale } = useRouter();
   const { t } = useTranslation();
+  const [isSlugDisable, setIsSlugDisable] = useState<boolean>(true);
+  const isSlugEditable =
+    router?.query?.action === 'edit' &&
+    router?.locale === Config.defaultLanguage;
   const {
     query: { shop },
   } = router;
@@ -94,7 +113,9 @@ export default function CreateOrUpdateAuthorForm({ initialValues }: IProps) {
     register,
     handleSubmit,
     control,
+    watch,
     setError,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     shouldUnregister: true,
@@ -113,6 +134,43 @@ export default function CreateOrUpdateAuthorForm({ initialValues }: IProps) {
       } as any,
     }),
   });
+
+  const { openModal } = useModalAction();
+  const slugAutoSuggest = formatSlug(watch('name'));
+  const {
+    // @ts-ignore
+    settings: { options },
+  } = useSettingsQuery({
+    language: locale!,
+  });
+
+  const generateName = watch('name');
+  const authorBioSuggestionList = useMemo(() => {
+    return AuthorBioSuggestion({ name: generateName ?? '' });
+  }, [generateName]);
+
+  const handleGenerateBioDescription = useCallback(() => {
+    openModal('GENERATE_DESCRIPTION', {
+      control,
+      name: generateName,
+      set_value: setValue,
+      key: 'bio',
+      suggestion: authorBioSuggestionList as ItemProps[],
+    });
+  }, [generateName]);
+
+  const authorQuoteSuggestionLists = useMemo(() => {
+    return AuthorQuoteSuggestion({ name: generateName ?? '' });
+  }, [generateName]);
+  const handleGenerateQuoteDescription = useCallback(() => {
+    openModal('GENERATE_DESCRIPTION', {
+      control,
+      name: generateName,
+      set_value: setValue,
+      key: 'quote',
+      suggestion: authorQuoteSuggestionLists as ItemProps[],
+    });
+  }, [generateName]);
 
   const { mutate: createAuthor, isLoading: creating } =
     useCreateAuthorMutation();
@@ -174,6 +232,8 @@ export default function CreateOrUpdateAuthorForm({ initialValues }: IProps) {
     }
   };
 
+  console.log('errors.name?.message!', errors.name?.message!)
+
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className="my-5 flex flex-wrap border-b border-dashed border-border-base pb-8 sm:my-8">
@@ -218,6 +278,35 @@ export default function CreateOrUpdateAuthorForm({ initialValues }: IProps) {
             variant="outline"
             className="mb-5"
           />
+
+          {isSlugEditable ? (
+            <div className="relative mb-5">
+              <Input
+                label={t('form:input-label-slug')}
+                {...register('slug')}
+                error={t(errors.slug?.message!)}
+                variant="outline"
+                disabled={isSlugDisable}
+              />
+              <button
+                className="absolute top-[27px] right-px z-0 flex h-[46px] w-11 items-center justify-center rounded-tr rounded-br border-l border-solid border-border-base bg-white px-2 text-body transition duration-200 hover:text-heading focus:outline-none"
+                type="button"
+                title={t('common:text-edit')}
+                onClick={() => setIsSlugDisable(false)}
+              >
+                <EditIcon width={14} />
+              </button>
+            </div>
+          ) : (
+            <Input
+              label={t('form:input-label-slug')}
+              {...register('slug')}
+              value={slugAutoSuggest}
+              variant="outline"
+              className="mb-5"
+              disabled
+            />
+          )}
           <Input
             label={t('form:input-label-languages')}
             {...register('languages')}
@@ -226,19 +315,36 @@ export default function CreateOrUpdateAuthorForm({ initialValues }: IProps) {
             className="mb-5"
             placeholder={t('form:placeholder-add-languages-comma-separated')}
           />
-          <TextArea
-            label={t('form:input-label-bio')}
-            {...register('bio')}
-            variant="outline"
-            className="mb-5"
-          />
 
-          <TextArea
-            label={t('form:input-label-quote')}
-            {...register('quote')}
-            variant="outline"
-            className="mb-5"
-          />
+          <div className="relative">
+            {options?.useAi && (
+              <OpenAIButton
+                title={t('form:button-label-description-ai')}
+                onClick={handleGenerateBioDescription}
+              />
+            )}
+            <TextArea
+              label={t('form:input-label-bio')}
+              {...register('bio')}
+              variant="outline"
+              className="mb-5"
+            />
+          </div>
+
+          <div className="relative">
+            {options?.useAi && (
+              <OpenAIButton
+                title={t('form:button-label-description-ai')}
+                onClick={handleGenerateQuoteDescription}
+              />
+            )}
+            <TextArea
+              label={t('form:input-label-quote')}
+              {...register('quote')}
+              variant="outline"
+              className="mb-5"
+            />
+          </div>
 
           <div className="mb-5 flex flex-col sm:flex-row">
             <div className="mb-5 w-full p-0 sm:mb-0 sm:w-1/2 sm:pe-2">
@@ -340,24 +446,30 @@ export default function CreateOrUpdateAuthorForm({ initialValues }: IProps) {
           </Button>
         </Card>
       </div>
-      <div className="mb-4 text-end">
-        {initialValues && (
-          <Button
-            variant="outline"
-            onClick={router.back}
-            className="me-4"
-            type="button"
-          >
-            {t('form:button-label-back')}
-          </Button>
-        )}
+      <StickyFooterPanel className="z-0">
+        <div className="text-end">
+          {initialValues && (
+            <Button
+              variant="outline"
+              onClick={router.back}
+              className="text-sm me-4 md:text-base"
+              type="button"
+            >
+              {t('form:button-label-back')}
+            </Button>
+          )}
 
-        <Button loading={updating || creating}>
-          {initialValues
-            ? t('form:button-label-update-author')
-            : t('form:button-label-add-author')}
-        </Button>
-      </div>
+          <Button
+            loading={creating || updating}
+            disabled={creating || updating}
+            className="text-sm md:text-base"
+          >
+            {initialValues
+              ? t('form:button-label-update-author')
+              : t('form:button-label-add-author')}
+          </Button>
+        </div>
+      </StickyFooterPanel>
     </form>
   );
 }
