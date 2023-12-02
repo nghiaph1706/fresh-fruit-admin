@@ -42,9 +42,11 @@ const ShopList = () => {
           className="mx-auto w-7/12"
         />
       ) : null}
-      {!!data?.managed_shop ? (
+      {data?.managed_shop && data.managed_shop.length > 0 ? (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4">
-          <ShopCard shop={data?.managed_shop} />
+          {data.managed_shop.map((shop, index) => (
+            <ShopCard key={index} shop={shop} />
+          ))}
         </div>
       ) : null}
     </>
