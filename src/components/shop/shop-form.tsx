@@ -407,7 +407,7 @@ const ShopForm = ({ initialValues }: { initialValues?: any }) => {
           </Card>
         </div>
 
-        {permissions?.includes(STORE_OWNER) ? (
+        {/* {permissions?.includes(STORE_OWNER) ? (
           <div className="my-5 flex flex-wrap border-b border-dashed border-border-base pb-8 sm:my-8">
             <Description
               title={t('form:form-notification-title')}
@@ -439,7 +439,7 @@ const ShopForm = ({ initialValues }: { initialValues?: any }) => {
           </div>
         ) : (
           ''
-        )}
+        )} */}
         <div className="my-5 flex flex-wrap border-b border-dashed border-gray-300 pb-8 sm:my-8">
           <Description
             title={t('form:shop-settings')}

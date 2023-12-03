@@ -447,7 +447,7 @@ export default function SettingsForm({
             className="mb-5"
             // disabled={isNotDefaultSettingsPage}
           />
-          <Input
+          {/* <Input
             label={`${t('form:input-label-signup-points')}`}
             {...register('signupPoints')}
             type="number"
@@ -455,7 +455,7 @@ export default function SettingsForm({
             variant="outline"
             className="mb-5"
             // disabled={isNotDefaultSettingsPage}
-          />
+          /> */}
 
           <Input
             label={`${t('form:input-label-maximum-question-limit')}`}
@@ -467,7 +467,7 @@ export default function SettingsForm({
             // disabled={isNotDefaultSettingsPage}
           />
 
-          <div className="mb-5">
+          {/* <div className="mb-5">
             <div className="flex items-center gap-x-4">
               <SwitchInput
                 name="useOtp"
@@ -476,7 +476,7 @@ export default function SettingsForm({
               />
               <Label className="mb-0">{t('form:input-label-enable-otp')}</Label>
             </div>
-          </div>
+          </div> */}
 
           <div className="mb-5">
             <div className="flex items-center gap-x-4">
@@ -491,7 +491,7 @@ export default function SettingsForm({
             </div>
           </div>
 
-          <div className="mb-5">
+          {/* <div className="mb-5">
             <div className="flex items-center gap-x-4">
               <SwitchInput
                 name="useAi"
@@ -502,8 +502,8 @@ export default function SettingsForm({
                 {t('form:input-label-enable-open-ai')}
               </Label>
             </div>
-          </div>
-          <div className="mb-5">
+          </div> */}
+          {/* <div className="mb-5">
             <Label>{t('form:input-label-select-ai')}</Label>
             <SelectInput
               name="defaultAi"
@@ -513,7 +513,7 @@ export default function SettingsForm({
               options={AI}
               // disabled={isNotDefaultSettingsPage}
             />
-          </div>
+          </div> */}
 
           <div className="mb-5">
             <Label>{t('form:input-label-tax-class')}</Label>
@@ -606,7 +606,7 @@ export default function SettingsForm({
             />
             <ValidationError message={t(errors.currency?.message)} />
           </div>
-          <div className="flex items-center gap-x-4">
+          {/* <div className="flex items-center gap-x-4">
             <SwitchInput
               control={control}
               // disabled={isNotDefaultSettingsPage}
@@ -680,7 +680,7 @@ export default function SettingsForm({
             </>
           ) : (
             ''
-          )}
+          )} */}
         </Card>
       </div>
       <div className="my-5 flex flex-wrap border-b border-dashed border-border-base pb-8 sm:my-8">
@@ -814,7 +814,7 @@ export default function SettingsForm({
           />
         </Card>
       </div>
-      <div className="my-5 flex flex-wrap border-b border-dashed border-border-base pb-8 sm:my-8">
+      {/* <div className="my-5 flex flex-wrap border-b border-dashed border-border-base pb-8 sm:my-8">
         <Description
           title={t('form:title-sms-event-settings')}
           details={t('form:description-sms-event-settings')}
@@ -846,9 +846,9 @@ export default function SettingsForm({
             <ValidationError message={t(errors.currency?.message)} />
           </div>
         </Card>
-      </div>
+      </div> */}
 
-      <div className="my-5 flex flex-wrap border-b border-dashed border-border-base pb-8 sm:my-8">
+      {/* <div className="my-5 flex flex-wrap border-b border-dashed border-border-base pb-8 sm:my-8">
         <Description
           title={t('form:title-email-event-settings')}
           details={t('form:description-email-event-settings')}
@@ -880,7 +880,7 @@ export default function SettingsForm({
             <ValidationError message={t(errors.currency?.message)} />
           </div>
         </Card>
-      </div>
+      </div> */}
 
       <div className="my-5 flex flex-wrap border-b border-dashed border-gray-300 pb-8 sm:my-8">
         <Description

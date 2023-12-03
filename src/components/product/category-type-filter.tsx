@@ -12,7 +12,7 @@ import { ActionMeta } from 'react-select';
 type Props = {
   onCategoryFilter?: (newValue: any, actionMeta: ActionMeta<unknown>) => void;
   onTypeFilter?: (newValue: any, actionMeta: ActionMeta<unknown>) => void;
-  onAuthorFilter?: (newValue: any, actionMeta: ActionMeta<unknown>) => void;
+  // onAuthorFilter?: (newValue: any, actionMeta: ActionMeta<unknown>) => void;
   onProductTypeFilter?: (
     newValue: any,
     actionMeta: ActionMeta<unknown>
@@ -28,13 +28,13 @@ type Props = {
 export default function CategoryTypeFilter({
   onTypeFilter,
   onCategoryFilter,
-  onAuthorFilter,
+  // onAuthorFilter,
   onProductTypeFilter,
   className,
   type,
   enableType,
   enableCategory,
-  enableAuthor,
+  // enableAuthor,
   enableProductType,
 }: Props) {
   const { locale } = useRouter();
@@ -47,10 +47,10 @@ export default function CategoryTypeFilter({
     type,
   });
 
-  const { authors, loading: authorLoading } = useAuthorsQuery({
-    limit: 999,
-    language: locale,
-  });
+  // const { authors, loading: authorLoading } = useAuthorsQuery({
+  //   limit: 999,
+  //   language: locale,
+  // });
 
   const productType = [
     { name: 'Simple product', slug: ProductType.Simple },
@@ -98,7 +98,7 @@ export default function CategoryTypeFilter({
         ''
       )}
 
-      {enableAuthor ? (
+      {/* {enableAuthor ? (
         <div className="w-full">
           <Label>{t('common:filter-by-author')}</Label>
           <Select
@@ -113,7 +113,7 @@ export default function CategoryTypeFilter({
         </div>
       ) : (
         ''
-      )}
+      )} */}
 
       {enableProductType ? (
         <div className="w-full">

@@ -82,7 +82,7 @@ export default function AuthorizedMenu() {
           <div className="space-y-0.5 py-2">
             {siteSettings?.authorizedLinks?.map(
               ({ href, labelTransKey, icon, permission }) => {
-                const hasPermission = permission?.includes(role!);
+                const hasPermission = permissions?.some(p => permission?.includes(p));
                 return (
                   <>
                     {hasPermission && (

@@ -210,12 +210,12 @@ export default function Dashboard() {
             color="#865DFF"
             price={data?.totalOrders}
           />
-          <StickerCard
+          {/* <StickerCard
             titleTransKey="sticker-card-title-vendor"
             icon={<ChecklistIcon className="h-8 w-8" />}
             color="#D74EFF"
             price={data?.totalVendors}
-          />
+          /> */}
           <StickerCard
             titleTransKey="sticker-card-title-total-shops"
             icon={<BasketIcon className="h-8 w-8" />}
