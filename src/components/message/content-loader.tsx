@@ -61,7 +61,7 @@ const MessageCardLoader = ({
           >
             {checkOddAdnEven(i) ? (
               <div className="w-10">
-                <Avatar src={siteSettings?.avatar?.placeholder} alt="avatar" />
+                <Avatar src={siteSettings?.avatar?.placeholder} name="avatar" />
               </div>
             ) : (
               ''

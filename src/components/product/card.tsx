@@ -49,17 +49,20 @@ const ProductCard = ({ item }: Props) => {
     <div className="cart-type-neon h-full overflow-hidden rounded border border-border-200 bg-light shadow-sm transition-all duration-200 hover:shadow-md">
       {/* <h3>{name}</h3> */}
 
-      <div className="relative flex h-48 w-auto items-center justify-center sm:h-64">
+      <div
+        className="relative flex h-48 w-auto cursor-pointer items-center justify-center sm:h-64"
+        onClick={handleVariableProduct}
+      >
         <span className="sr-only">{t('text-product-image')}</span>
         <Image
           src={image?.original ?? productPlaceholder}
           alt={name}
-          layout="fill"
-          objectFit="contain"
-          className="product-image"
+          fill
+          sizes="(max-width: 768px) 100vw"
+          className="product-image object-contain"
         />
         {discount && (
-          <div className="end-3 md:end-4 absolute top-3 rounded bg-accent px-1.5 text-xs font-semibold leading-6 text-light sm:px-2 md:top-4 md:px-2.5">
+          <div className="absolute top-3 rounded bg-accent px-1.5 text-xs font-semibold leading-6 text-light end-3 sm:px-2 md:top-4 md:px-2.5 md:end-4">
             {discount}
           </div>
         )}
@@ -82,7 +85,7 @@ const ProductCard = ({ item }: Props) => {
               {currentPrice}
             </span>
             {basePrice && (
-              <del className="ms-2 text-xs text-muted md:text-sm">
+              <del className="text-xs text-muted ms-2 md:text-sm">
                 {basePrice}
               </del>
             )}
@@ -99,7 +102,7 @@ const ProductCard = ({ item }: Props) => {
                 className="group flex h-7 w-full items-center justify-between rounded bg-gray-100 text-xs text-body-dark transition-colors hover:border-accent hover:bg-accent hover:text-light focus:border-accent focus:bg-accent focus:text-light focus:outline-none md:h-9 md:text-sm"
               >
                 <span className="flex-1">{t('text-add')}</span>
-                <span className="rounded-te rounded-be grid h-7 w-7 place-items-center bg-gray-200 transition-colors duration-200 group-hover:bg-accent-600 group-focus:bg-accent-600 md:h-9 md:w-9">
+                <span className="grid h-7 w-7 place-items-center bg-gray-200 transition-colors duration-200 rounded-te rounded-be group-hover:bg-accent-600 group-focus:bg-accent-600 md:h-9 md:w-9">
                   <PlusIcon className="h-4 w-4 stroke-2" />
                 </span>
               </button>
@@ -112,8 +115,8 @@ const ProductCard = ({ item }: Props) => {
         )}
 
         {Number(quantity) <= 0 && (
-          <div className="rounded bg-red-500 px-2 py-1 text-xs text-light">
-            {t('text-out-stock')}
+          <div className="rounded bg-red-500 px-3 py-2.5 text-xs text-light">
+            {t('text-out-of-stock')}
           </div>
         )}
       </header>

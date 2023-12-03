@@ -6,6 +6,7 @@ import Loader from '@/components/ui/loader/loader';
 import { useMeQuery } from '@/data/user';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import EmailUpdateForm from '@/components/auth/email-update-form';
 
 export default function ProfilePage() {
   const { t } = useTranslation();
@@ -14,11 +15,12 @@ export default function ProfilePage() {
   if (error) return <ErrorMessage message={error.message} />;
   return (
     <>
-      <div className="flex border-b border-dashed border-border-base py-5 sm:py-8">
+      <div className="flex border-b border-dashed border-border-base pb-5 md:pb-7">
         <h1 className="text-lg font-semibold text-heading">
           {t('form:form-title-profile-settings')}
         </h1>
       </div>
+      <EmailUpdateForm me={data} />
 
       <ProfileUpdateFrom me={data} />
       <ChangePasswordForm />

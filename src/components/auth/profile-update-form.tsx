@@ -11,6 +11,8 @@ import pick from 'lodash/pick';
 import SwitchInput from '@/components/ui/switch-input';
 import Label from '@/components/ui/label';
 import { adminOnly, getAuthCredentials, hasAccess } from '@/utils/auth-utils';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { profileValidationSchema } from './profile-validation-schema';
 
 type FormValues = {
   name: string;
@@ -41,6 +43,7 @@ export default function ProfileUpdate({ me }: any) {
     control,
     formState: { errors },
   } = useForm<FormValues>({
+    resolver: yupResolver(profileValidationSchema),
     defaultValues: {
       ...(me &&
         pick(me, [
@@ -114,7 +117,7 @@ export default function ProfileUpdate({ me }: any) {
                 name="profile.notifications.enable"
                 control={control}
               />
-              <Label className="mb-0">
+              <Label className="!mb-0.5">
                 {t('form:input-enable-notification')}
               </Label>
             </div>

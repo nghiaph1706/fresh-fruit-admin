@@ -32,6 +32,15 @@ export const useCreateProductMutation = () => {
     onSettled: () => {
       queryClient.invalidateQueries(API_ENDPOINTS.PRODUCTS);
     },
+    onError: (error: any) => {
+      const { data, status } = error?.response;
+      if (status === 422) {
+        const errorMessage: any = Object.values(data).flat();
+        toast.error(errorMessage[0]);
+      } else {
+        toast.error(t(`common:${error?.response?.data.message}`));
+      }
+    },
   });
 };
 
@@ -57,6 +66,9 @@ export const useUpdateProductMutation = () => {
     onSettled: () => {
       queryClient.invalidateQueries(API_ENDPOINTS.PRODUCTS);
     },
+    onError: (error: any) => {
+      toast.error(t(`common:${error?.response?.data.message}`));
+    },
   });
 };
 
@@ -70,6 +82,9 @@ export const useDeleteProductMutation = () => {
     // Always refetch after error or success:
     onSettled: () => {
       queryClient.invalidateQueries(API_ENDPOINTS.PRODUCTS);
+    },
+    onError: (error: any) => {
+      toast.error(t(`common:${error?.response?.data.message}`));
     },
   });
 };
@@ -98,6 +113,85 @@ export const useProductsQuery = (
     {
       keepPreviousData: true,
       ...options,
+    }
+  );
+
+  return {
+    products: data?.data ?? [],
+    paginatorInfo: mapPaginatorData(data),
+    error,
+    loading: isLoading,
+  };
+};
+
+export const useGenerateDescriptionMutation = () => {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation('common');
+  return useMutation(productClient.generateDescription, {
+    onSuccess: () => {
+      toast.success(t('Generated...'));
+    },
+    // Always refetch after error or success:
+    onSettled: (data) => {
+      queryClient.refetchQueries(API_ENDPOINTS.GENERATE_DESCRIPTION);
+      data;
+    },
+  });
+};
+
+export const useInActiveProductsQuery = (
+  options: Partial<ProductQueryOptions>
+) => {
+  const { data, error, isLoading } = useQuery<ProductPaginator, Error>(
+    [API_ENDPOINTS.NEW_OR_INACTIVE_PRODUCTS, options],
+    ({ queryKey, pageParam }) =>
+      productClient.newOrInActiveProducts(
+        Object.assign({}, queryKey[1], pageParam)
+      ),
+    {
+      keepPreviousData: true,
+    }
+  );
+
+  return {
+    products: data?.data ?? [],
+    paginatorInfo: mapPaginatorData(data),
+    error,
+    loading: isLoading,
+  };
+};
+
+export const useProductStockQuery = (options: Partial<ProductQueryOptions>) => {
+  const { data, error, isLoading } = useQuery<ProductPaginator, Error>(
+    [API_ENDPOINTS.LOW_OR_OUT_OF_STOCK_PRODUCTS, options],
+    ({ queryKey, pageParam }) =>
+      productClient.lowOrOutOfStockProducts(
+        Object.assign({}, queryKey[1], pageParam)
+      ),
+    {
+      keepPreviousData: true,
+    }
+  );
+
+  return {
+    products: data?.data ?? [],
+    paginatorInfo: mapPaginatorData(data),
+    error,
+    loading: isLoading,
+  };
+};
+
+// Read All products by flash sale
+
+export const useProductsByFlashSaleQuery = (options: any) => {
+  const { data, error, isLoading } = useQuery<ProductPaginator, Error>(
+    [API_ENDPOINTS.PRODUCTS_BY_FLASH_SALE, options],
+    ({ queryKey, pageParam }) =>
+      productClient.getProductsByFlashSale(
+        Object.assign({}, queryKey[1], pageParam)
+      ),
+    {
+      keepPreviousData: true,
     }
   );
 

@@ -5,10 +5,10 @@ import Loader from '@/components/ui/loader/loader';
 import AccessDeniedPage from '@/components/common/access-denied';
 import { Routes } from '@/config/routes';
 
-const PrivateRoute: React.FC<{ authProps: any }> = ({
-  children,
-  authProps,
-}) => {
+const PrivateRoute: React.FC<{
+  authProps: any;
+  children?: React.ReactNode;
+}> = ({ children, authProps }) => {
   const router = useRouter();
   const { token, permissions } = getAuthCredentials();
   const isUser = !!token;

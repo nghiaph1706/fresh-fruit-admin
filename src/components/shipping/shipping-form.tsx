@@ -14,6 +14,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { shippingValidationSchema } from './shipping-validation-schema';
 import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
+import StickyFooterPanel from '@/components/ui/sticky-footer-panel';
 
 const defaultValues = {
   name: '',
@@ -111,25 +112,31 @@ export default function CreateOrUpdateShippingForm({ initialValues }: IProps) {
         </Card>
       </div>
 
-      <div className="mb-4 text-end">
-        {initialValues && (
-          <Button
-            variant="outline"
-            onClick={router.back}
-            className="me-4"
-            type="button"
-          >
-            {t('form:button-label-back')}
-          </Button>
-        )}
+      <StickyFooterPanel className='z-0'>
+        <div className="text-end">
+          {initialValues && (
+            <Button
+              variant="outline"
+              onClick={router.back}
+              className="me-4 text-sm md:text-base"
+              type="button"
+            >
+              {t('form:button-label-back')}
+            </Button>
+          )}
 
-        <Button loading={creating || updating} disabled={creating || updating}>
-          {initialValues
-            ? t('form:button-label-update')
-            : t('form:button-label-add')}{' '}
-          {t('form:button-label-shipping')}
-        </Button>
-      </div>
+          <Button
+            loading={creating || updating}
+            disabled={creating || updating}
+            className='text-sm md:text-base'
+          >
+            {initialValues
+              ? t('form:button-label-update')
+              : t('form:button-label-add')}{' '}
+            {t('form:button-label-shipping')}
+          </Button>
+        </div>
+      </StickyFooterPanel>
     </form>
   );
 }

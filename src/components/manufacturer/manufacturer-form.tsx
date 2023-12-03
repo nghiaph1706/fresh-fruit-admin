@@ -15,31 +15,47 @@ import { getIcon } from '@/utils/get-icon';
 import SelectInput from '@/components/ui/select-input';
 import * as socialIcons from '@/components/icons/social';
 import ProductGroupInput from '@/components/product/product-group-input';
-import { AttachmentInput, Manufacturer, ShopSocialInput } from '@/types';
+import { EditIcon } from '@/components/icons/edit';
+import { Config } from '@/config';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { join, split } from 'lodash';
+import {
+  AttachmentInput,
+  ItemProps,
+  Manufacturer,
+  ShopSocialInput,
+} from '@/types';
 import { useShopQuery } from '@/data/shop';
 import {
   useCreateManufacturerMutation,
   useUpdateManufacturerMutation,
 } from '@/data/manufacturer';
+import { useSettingsQuery } from '@/data/settings';
+import OpenAIButton from '@/components/openAI/openAI.button';
+import { useModalAction } from '@/components/ui/modal/modal.context';
+import { formatSlug } from '@/utils/use-slug';
+import StickyFooterPanel from '@/components/ui/sticky-footer-panel';
+import { socialIcon } from '@/settings/site.settings';
+import { ManufacturerDescriptionSuggestion } from '@/components/manufacturer/manufacturer-ai-prompt';
 
-const socialIcon = [
-  {
-    value: 'FacebookIcon',
-    label: 'Facebook',
-  },
-  {
-    value: 'InstagramIcon',
-    label: 'Instagram',
-  },
-  {
-    value: 'TwitterIcon',
-    label: 'Twitter',
-  },
-  {
-    value: 'YouTubeIcon',
-    label: 'Youtube',
-  },
-];
+// const socialIcon = [
+//   {
+//     value: 'FacebookIcon',
+//     label: 'Facebook',
+//   },
+//   {
+//     value: 'InstagramIcon',
+//     label: 'Instagram',
+//   },
+//   {
+//     value: 'TwitterIcon',
+//     label: 'Twitter',
+//   },
+//   {
+//     value: 'YouTubeIcon',
+//     label: 'Youtube',
+//   },
+// ];
 
 export const updatedIcons = socialIcon.map((item: any) => {
   item.label = (
@@ -59,6 +75,7 @@ export const updatedIcons = socialIcon.map((item: any) => {
 
 type FormValues = {
   name: string;
+  slug: string;
   description: string;
   website: string;
   socials: ShopSocialInput[];
@@ -84,6 +101,10 @@ export default function CreateOrUpdateManufacturerForm({
 }: IProps) {
   const router = useRouter();
   const { t } = useTranslation();
+  const [isSlugDisable, setIsSlugDisable] = useState<boolean>(true);
+  const isSlugEditable =
+    router?.query?.action === 'edit' &&
+    router?.locale === Config.defaultLanguage;
   const {
     query: { shop },
   } = router;
@@ -94,12 +115,24 @@ export default function CreateOrUpdateManufacturerForm({
     { enabled: !!router.query.shop }
   );
   const shopId = shopData?.id!;
+  const isTranslate = router.locale !== Config.defaultLanguage;
   const isNewTranslation = router?.query?.action === 'translate';
+  const { locale } = router;
+
+  const {
+    // @ts-ignore
+    settings: { options },
+  } = useSettingsQuery({
+    language: locale!,
+  });
+  const { openModal } = useModalAction();
 
   const {
     register,
     handleSubmit,
     control,
+    watch,
+    setValue,
     setError,
 
     formState: { errors },
@@ -126,6 +159,21 @@ export default function CreateOrUpdateManufacturerForm({
     useCreateManufacturerMutation();
   const { mutate: updateManufacturer, isLoading: updating } =
     useUpdateManufacturerMutation();
+  const slugAutoSuggest = formatSlug(watch('name'));
+  const generateName = watch('name');
+  const manufacturerDescriptionSuggestionLists = useMemo(() => {
+    return ManufacturerDescriptionSuggestion({ name: generateName ?? '' });
+  }, [generateName]);
+
+  const handleGenerateDescription = useCallback(() => {
+    openModal('GENERATE_DESCRIPTION', {
+      control,
+      name: generateName,
+      set_value: setValue,
+      key: 'description',
+      suggestion: manufacturerDescriptionSuggestionLists as ItemProps[],
+    });
+  }, [generateName]);
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -135,6 +183,7 @@ export default function CreateOrUpdateManufacturerForm({
   const onSubmit = async (values: FormValues) => {
     const {
       name,
+      slug,
       description,
       is_approved,
       website,
@@ -146,6 +195,7 @@ export default function CreateOrUpdateManufacturerForm({
     const input = {
       language: router.locale,
       name,
+      slug,
       description,
       is_approved,
       website,
@@ -238,7 +288,37 @@ export default function CreateOrUpdateManufacturerForm({
             error={t(errors.name?.message!)}
             variant="outline"
             className="mb-5"
+            required
           />
+
+          {isSlugEditable ? (
+            <div className="relative mb-5">
+              <Input
+                label={t('form:input-label-slug')}
+                {...register('slug')}
+                error={t(errors.slug?.message!)}
+                variant="outline"
+                disabled={isSlugDisable}
+              />
+              <button
+                className="absolute top-[27px] right-px z-0 flex h-[46px] w-11 items-center justify-center rounded-tr rounded-br border-l border-solid border-border-base bg-white px-2 text-body transition duration-200 hover:text-heading focus:outline-none"
+                type="button"
+                title={t('common:text-edit')}
+                onClick={() => setIsSlugDisable(false)}
+              >
+                <EditIcon width={14} />
+              </button>
+            </div>
+          ) : (
+            <Input
+              label={t('form:input-label-slug')}
+              {...register('slug')}
+              value={slugAutoSuggest}
+              variant="outline"
+              className="mb-5"
+              disabled
+            />
+          )}
 
           <Input
             label={t('form:input-label-website')}
@@ -248,12 +328,21 @@ export default function CreateOrUpdateManufacturerForm({
             className="mb-5"
           />
 
-          <TextArea
-            label={t('form:input-label-description')}
-            {...register('description')}
-            variant="outline"
-            className="mb-5"
-          />
+          <div className="relative">
+            {options?.useAi && (
+              <OpenAIButton
+                title={t('form:button-label-description-ai')}
+                onClick={handleGenerateDescription}
+              />
+            )}
+            <TextArea
+              label={t('form:input-label-description')}
+              {...register('description')}
+              variant="outline"
+              className="mb-5"
+            />
+          </div>
+
           <ProductGroupInput
             control={control}
             error={t(errors?.type?.message)}
@@ -275,6 +364,7 @@ export default function CreateOrUpdateManufacturerForm({
                         options={updatedIcons}
                         isClearable={true}
                         defaultValue={item?.icon!}
+                        disabled={isTranslate}
                       />
                     </div>
 
@@ -284,6 +374,9 @@ export default function CreateOrUpdateManufacturerForm({
                       variant="outline"
                       {...register(`socials.${index}.url` as const)}
                       defaultValue={item.url!} // make sure to set up defaultValue
+                      disabled={isTranslate}
+                      required
+                      error={t(errors?.socials?.[index]?.url?.message!)}
                     />
                     <button
                       onClick={() => {
@@ -310,24 +403,30 @@ export default function CreateOrUpdateManufacturerForm({
         </Card>
       </div>
 
-      <div className="mb-4 text-end">
-        {initialValues && (
-          <Button
-            variant="outline"
-            onClick={router.back}
-            className="me-4"
-            type="button"
-          >
-            {t('form:button-label-back')}
-          </Button>
-        )}
+      <StickyFooterPanel className="z-0">
+        <div className="text-end">
+          {initialValues && (
+            <Button
+              variant="outline"
+              onClick={router.back}
+              className="text-sm me-4 md:text-base"
+              type="button"
+            >
+              {t('form:button-label-back')}
+            </Button>
+          )}
 
-        <Button loading={updating || creating}>
-          {initialValues
-            ? t('form:button-label-update-manufacturer-publication')
-            : t('form:button-label-add-manufacturer-publication')}
-        </Button>
-      </div>
+          <Button
+            loading={creating || updating}
+            disabled={creating || updating}
+            className="text-sm md:text-base"
+          >
+            {initialValues
+              ? t('form:button-label-update-manufacturer-publication')
+              : t('form:button-label-add-manufacturer-publication')}
+          </Button>
+        </div>
+      </StickyFooterPanel>
     </form>
   );
 }

@@ -36,7 +36,18 @@ export type MODAL_VIEWS =
   | 'DECLINE_ABUSE_REPORT'
   | 'REVIEW_IMAGE_POPOVER'
   | 'ABUSE_REPORT'
-  | 'COMPOSE_MESSAGE';
+  | 'GENERATE_DESCRIPTION'
+  | 'COMPOSE_MESSAGE'
+  | 'DELETE_FAQ'
+  | 'DELETE_TERMS_AND_CONDITIONS'
+  | 'TERM_APPROVE_VIEW'
+  | 'SEARCH_VIEW'
+  | 'TERM_DISAPPROVE_VIEW'
+  | 'TERM_DISAPPROVE_VIEW'
+  | 'DELETE_FLASH_SALE'
+  | 'DESCRIPTION_VIEW'
+  | 'DELETE_REFUND_POLICY'
+  | 'DELETE_REFUND_REASON';
 
 interface State {
   view?: MODAL_VIEWS;
@@ -81,7 +92,9 @@ const ModalActionContext = React.createContext<
 >(undefined);
 ModalActionContext.displayName = 'ModalActionContext';
 
-export const ModalProvider: React.FC = ({ children }) => {
+export const ModalProvider: React.FC<{ children?: React.ReactNode }> = ({
+  children,
+}) => {
   const [state, dispatch] = React.useReducer(modalReducer, initialState);
   return (
     <ModalStateContext.Provider value={state}>

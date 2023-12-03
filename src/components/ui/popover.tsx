@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { Popover, Transition } from '@headlessui/react';
-import { Fragment } from 'react';
 import cn from 'classnames';
 import { ToggleIcon, ToggleIconVertical } from '@/components/icons/toggle-icon';
 import {

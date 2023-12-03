@@ -30,10 +30,14 @@ const ReviewImageModal = () => {
           id="review-gallery"
           modules={[Navigation]}
           initialSlide={data?.initSlide ?? 0}
-          onSwiper={(swiper) => {
-            setTimeout(() => {
-              swiper.navigation.init();
-            }, 100);
+          // onSwiper={(swiper) => {
+          //   setTimeout(() => {
+          //     swiper.navigation.init();
+          //   }, 100);
+          // }}
+          onInit={(swiper) => {
+            swiper.navigation.init();
+            swiper.navigation.update();
           }}
           loop={data?.images?.length > 1}
           navigation={{
@@ -45,14 +49,14 @@ const ReviewImageModal = () => {
           {data?.images?.map((item: any) => (
             <SwiperSlide
               key={`review-gallery-${item.id}`}
-              className="flex items-center justify-center selection:bg-transparent"
+              className="relative flex items-center justify-center selection:bg-transparent"
             >
               <Image
                 src={item?.original ?? '/product-placeholder-borderless.svg'}
                 alt={`Review gallery ${item.id}`}
                 width={600}
                 height={600}
-                objectFit="contain"
+                className="object-contain"
               />
             </SwiperSlide>
           ))}
@@ -61,7 +65,7 @@ const ReviewImageModal = () => {
           <>
             <div
               ref={prevRef}
-              className="review-gallery-prev start-2 md:start-3 absolute top-2/4 z-10 -mt-4 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-border-200 border-opacity-70 bg-light text-heading shadow-xl transition-all duration-200 hover:bg-gray-100 md:-mt-5 md:h-9 md:w-9"
+              className="review-gallery-prev absolute top-2/4 z-10 -mt-4 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-border-200 border-opacity-70 bg-light text-heading shadow-xl transition-all duration-200 start-2 hover:bg-gray-100 md:-mt-5 md:h-9 md:w-9 md:start-3"
             >
               {isRTL ? (
                 <ChevronRight className="h-4 w-4" />
@@ -71,7 +75,7 @@ const ReviewImageModal = () => {
             </div>
             <div
               ref={nextRef}
-              className="review-gallery-next end-2 md:end-3 absolute top-2/4 z-10 -mt-4 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-border-200 border-opacity-70 bg-light text-heading shadow-xl transition-all duration-200 hover:bg-gray-100 md:-mt-5 md:h-9 md:w-9"
+              className="review-gallery-next absolute top-2/4 z-10 -mt-4 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-border-200 border-opacity-70 bg-light text-heading shadow-xl transition-all duration-200 end-2 hover:bg-gray-100 md:-mt-5 md:h-9 md:w-9 md:end-3"
             >
               {isRTL ? (
                 <ChevronLeft className="h-4 w-4" />

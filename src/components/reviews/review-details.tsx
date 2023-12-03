@@ -18,6 +18,7 @@ import { CheckedIcon } from '@/components/icons/checked';
 import { LikeIcon } from '@/components/icons/like-icon';
 import { DislikeIcon } from '@/components/icons/dislike-icon';
 import isEmpty from 'lodash/isEmpty';
+import { NoDataFound } from '@/components/icons/no-data-found';
 
 type IProps = {
   review: Review | undefined | null;
@@ -134,15 +135,14 @@ const ReviewDetailsView = ({ review }: IProps) => {
         <div className="relative h-20 w-20 shrink-0 border border-gray-200">
           <Image
             src={image?.thumbnail ?? siteSettings.product.placeholder}
-            alt={name}
-            layout="responsive"
+            alt={String(name)}
             width={75}
             height={75}
             className="overflow-hidden rounded"
           />
         </div>
 
-        <div className="pe-4 md:pe-5 flex flex-col space-y-1.5">
+        <div className="flex flex-col space-y-1.5 pe-4 md:pe-5">
           <Link
             href={process.env.NEXT_PUBLIC_SHOP_URL + '/products/' + slug}
             className="text-lg font-semibold text-heading transition-colors hover:text-accent hover:no-underline focus:text-accent-700 focus:no-underline"
@@ -166,7 +166,7 @@ const ReviewDetailsView = ({ review }: IProps) => {
                 {currentPrice}
               </span>
               {basePrice && (
-                <del className="ms-2 text-xs text-muted md:text-sm">
+                <del className="text-xs text-muted ms-2 md:text-sm">
                   {basePrice}
                 </del>
               )}
@@ -176,7 +176,7 @@ const ReviewDetailsView = ({ review }: IProps) => {
 
         <div className="!ml-auto inline-flex shrink-0 items-center rounded-full border border-accent px-3 py-0.5 text-base text-accent">
           {ratings}
-          <StarIcon className="ms-1 h-3 w-3" />
+          <StarIcon className="h-3 w-3 ms-1" />
         </div>
       </div>
 
@@ -185,7 +185,7 @@ const ReviewDetailsView = ({ review }: IProps) => {
         <div className="mb-5 flex items-center justify-between">
           <div className="inline-flex shrink-0 items-center rounded-full border border-accent px-3 py-0.5 text-base text-accent">
             {rating}
-            <StarIcon className="ms-1 h-3 w-3" />
+            <StarIcon className="h-3 w-3 ms-1" />
           </div>
 
           {/* Accept/decline buttons */}
@@ -212,7 +212,7 @@ const ReviewDetailsView = ({ review }: IProps) => {
         <div className="mb-3 flex items-center text-xs text-gray-500">
           {t('common:text-by')}{' '}
           <span className="font-semibold capitalize text-heading ltr:ml-1 rtl:mr-1">
-            {user?.name}
+            {user?.name ? user?.name : t('common:text-guest')}
           </span>
           {user?.is_active && (
             <CheckedIcon className="h-[13px] w-[13px] text-gray-700 ltr:ml-1 rtl:mr-1" />
@@ -220,7 +220,7 @@ const ReviewDetailsView = ({ review }: IProps) => {
         </div>
         <p className="text-sm leading-6 text-heading">{comment}</p>
         {photos && !isEmpty(photos) && (
-          <div className="space-s-2 flex items-start pt-3">
+          <div className="flex items-start pt-3 space-s-2">
             {photos?.map((photo: any, idx: any) => (
               <div className="mb-1" key={idx}>
                 <Image
@@ -228,6 +228,7 @@ const ReviewDetailsView = ({ review }: IProps) => {
                   width={32}
                   height={32}
                   className="inline-flex rounded-md bg-gray-200"
+                  // @ts-ignore
                   alt={review?.product?.name}
                 />
               </div>
@@ -243,11 +244,11 @@ const ReviewDetailsView = ({ review }: IProps) => {
         )}
         <div className="mt-4 flex items-center space-x-4 rtl:space-x-reverse">
           <span className="flex items-center text-xs tracking-wider text-gray-400 transition">
-            <LikeIcon className="me-1.5 h-4 w-4" />
+            <LikeIcon className="h-4 w-4 me-1.5" />
             {positive_feedbacks_count}
           </span>
           <span className="flex items-center text-xs tracking-wider text-gray-400 transition">
-            <DislikeIcon className="me-1.5 h-4 w-4" />
+            <DislikeIcon className="h-4 w-4 me-1.5" />
             {negative_feedbacks_count}
           </span>
         </div>
@@ -257,7 +258,15 @@ const ReviewDetailsView = ({ review }: IProps) => {
       <Table
         //@ts-ignore
         columns={columns}
-        emptyText={t('table:empty-table-data')}
+        emptyText={() => (
+          <div className="flex flex-col items-center py-7">
+            <NoDataFound className="w-52" />
+            <div className="mb-1 pt-6 text-base font-semibold text-heading">
+              {t('table:empty-table-data')}
+            </div>
+            <p className="text-[13px]">{t('table:empty-table-sorry-text')}</p>
+          </div>
+        )}
         data={abusive_reports}
         rowKey="id"
         scroll={{ x: 700 }}

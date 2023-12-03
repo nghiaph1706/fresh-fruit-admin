@@ -1,5 +1,6 @@
 import cn from 'classnames';
 import React, { ButtonHTMLAttributes } from 'react';
+import { twMerge } from 'tailwind-merge';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   className?: string;
@@ -58,7 +59,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         aria-pressed={active}
         data-variant={variant}
         ref={ref}
-        className={classesName}
+        className={twMerge(classesName)}
         disabled={disabled}
         {...rest}
       >

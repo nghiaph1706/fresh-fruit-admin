@@ -9,7 +9,7 @@ import { toast } from 'react-toastify';
 import { useTranslation } from 'next-i18next';
 import { mapPaginatorData } from '@/utils/data-mappers';
 import { storeNoticeClient } from './client/store-notice';
-import type { UseInfiniteQueryOptions } from 'react-query';
+import type { UseInfiniteQueryOptions, UseQueryOptions } from 'react-query';
 
 import {
   StoreNotice,
@@ -39,6 +39,9 @@ export const useCreateStoreNoticeMutation = () => {
     onSettled: () => {
       queryClient.invalidateQueries(API_ENDPOINTS.STORE_NOTICES);
     },
+    onError: (error: any) => {
+      toast.error(t(`common:${error?.response?.data.message}`));
+    },
   });
 };
 
@@ -53,6 +56,9 @@ export const useDeleteStoreNoticeMutation = () => {
     // Always refetch after error or success:
     onSettled: () => {
       queryClient.invalidateQueries(API_ENDPOINTS.STORE_NOTICES);
+    },
+    onError: (error: any) => {
+      toast.error(t(`common:${error?.response?.data.message}`));
     },
   });
 };
@@ -74,6 +80,9 @@ export const useUpdateStoreNoticeMutation = () => {
     // Always refetch after error or success:
     onSettled: () => {
       queryClient.invalidateQueries(API_ENDPOINTS.STORE_NOTICES);
+    },
+    onError: (error: any) => {
+      toast.error(t(`common:${error?.response?.data.message}`));
     },
   });
 };
@@ -103,13 +112,15 @@ export const useStoreNoticeQuery = ({
 };
 
 export const useStoreNoticesQuery = (
-  options: Partial<StoreNoticeQueryOptions>
+  options: Partial<StoreNoticeQueryOptions>,
+  config: UseQueryOptions<StoreNoticePaginator, Error> = {}
 ) => {
   const { data, error, isLoading } = useQuery<StoreNoticePaginator, Error>(
     [API_ENDPOINTS.STORE_NOTICES, options],
     ({ queryKey, pageParam }) =>
       storeNoticeClient.paginated(Object.assign({}, queryKey[1], pageParam)),
     {
+      ...config,
       keepPreviousData: true,
     }
   );

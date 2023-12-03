@@ -7,6 +7,10 @@ const initialState = {
   siteTitle: 'PickBazar',
   siteSubtitle: '',
   currency: 'USD',
+  currencyOptions: {
+    formation: "en-US",
+    fractions: 2,
+  },
   logo: {
     id: 1,
     thumbnail: '/logo.svg',

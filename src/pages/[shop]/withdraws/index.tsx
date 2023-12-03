@@ -7,13 +7,24 @@ import WithdrawList from '@/components/withdraw/withdraw-list';
 import LinkButton from '@/components/ui/link-button';
 import ShopLayout from '@/components/layouts/shop';
 import { useRouter } from 'next/router';
-import { adminAndOwnerOnly } from '@/utils/auth-utils';
+import {
+  adminAndOwnerOnly,
+  adminOnly,
+  getAuthCredentials,
+  hasAccess,
+} from '@/utils/auth-utils';
 import { useShopQuery } from '@/data/shop';
 import { useWithdrawsQuery } from '@/data/withdraw';
 import { useState } from 'react';
 import { SortOrder } from '@/types';
+import { Routes } from '@/config/routes';
+import { useMeQuery } from '@/data/user';
+import PageHeading from '@/components/common/page-heading';
 
 export default function WithdrawsPage() {
+  const router = useRouter();
+  const { permissions } = getAuthCredentials();
+  const { data: me } = useMeQuery();
   const { t } = useTranslation();
   const [page, setPage] = useState(1);
   const [orderBy, setOrder] = useState('created_at');
@@ -46,13 +57,19 @@ export default function WithdrawsPage() {
     setPage(current);
   }
 
+  if (
+    !hasAccess(adminOnly, permissions) &&
+    !me?.shops?.map((shop) => shop.id).includes(shopId) &&
+    me?.managed_shop?.id != shopId
+  ) {
+    router.replace(Routes.dashboard);
+  }
+
   return (
     <>
       <Card className="mb-8 flex flex-col items-center justify-between md:flex-row">
         <div className="mb-4 md:mb-0 md:w-1/4">
-          <h1 className="text-lg font-semibold text-heading">
-            {t('common:sidebar-nav-item-withdraws')}
-          </h1>
+          <PageHeading title={t('common:sidebar-nav-item-withdraws')} />
         </div>
 
         <LinkButton

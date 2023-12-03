@@ -1,5 +1,9 @@
-import { ProductType } from '@/types';
+import { ProductStatus, ProductType } from '@/types';
 import * as yup from 'yup';
+
+// fetch
+// yup conditionnally
+const SUPPORTED_IMAGE_FORMATS = ['image/jpg', 'image/jpeg', 'image/png'];
 
 export const productValidationSchema = yup.object().shape({
   name: yup.string().required('form:error-name-required'),
@@ -44,7 +48,7 @@ export const productValidationSchema = yup.object().shape({
   }),
   unit: yup.string().required('form:error-unit-required'),
   type: yup.object().nullable().required('form:error-type-required'),
-  status: yup.string().required('form:error-status-required'),
+  status: yup.string().nullable().required('form:error-status-required'),
   variation_options: yup.array().of(
     yup.object().shape({
       price: yup
@@ -90,4 +94,24 @@ export const productValidationSchema = yup.object().shape({
     }
     return yup.string().nullable();
   }),
+  video: yup.array().of(
+    yup.object().shape({
+      url: yup.string().required('Video URL is required'),
+    })
+  ),
+  // image: yup
+  //   .mixed()
+  //   .nullable()
+  //   .required('A file is required')
+  //   .test(
+  //     'FILE_SIZE',
+  //     'Uploaded file is too big.',
+  //     (value) => !value || (value && value.size <= 1024 * 1024)
+  //   )
+  //   .test(
+  //     'FILE_FORMAT',
+  //     'Uploaded file has unsupported format.',
+  //     (value) =>
+  //       !value || (value && SUPPORTED_IMAGE_FORMATS.includes(value?.type))
+  //   ),
 });

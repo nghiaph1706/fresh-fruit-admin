@@ -14,6 +14,7 @@ interface SelectInputProps {
   disabled?: boolean;
   isLoading?: boolean;
   [key: string]: unknown;
+  placeholder?: string;
 }
 
 const SelectInput = ({
@@ -27,6 +28,7 @@ const SelectInput = ({
   isMulti,
   isClearable,
   isLoading,
+  placeholder,
   ...rest
 }: SelectInputProps) => {
   return (
@@ -40,6 +42,7 @@ const SelectInput = ({
           {...field}
           getOptionLabel={getOptionLabel}
           getOptionValue={getOptionValue}
+          placeholder={placeholder}
           isMulti={isMulti}
           isClearable={isClearable}
           isLoading={isLoading}

@@ -9,7 +9,12 @@ import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import ShopLayout from '@/components/layouts/shop';
 import { useRouter } from 'next/router';
-import { adminOwnerAndStaffOnly } from '@/utils/auth-utils';
+import {
+  adminOnly,
+  adminOwnerAndStaffOnly,
+  getAuthCredentials,
+  hasAccess,
+} from '@/utils/auth-utils';
 import { useOrdersQuery } from '@/data/order';
 import { SortOrder } from '@/types';
 import { useShopQuery } from '@/data/shop';
@@ -18,9 +23,14 @@ import { Menu, Transition } from '@headlessui/react';
 import classNames from 'classnames';
 import { MoreIcon } from '@/components/icons/more-icon';
 import { useExportOrderQuery } from '@/data/export';
+import { useMeQuery } from '@/data/user';
+import { Routes } from '@/config/routes';
+import PageHeading from '@/components/common/page-heading';
 
 export default function Orders() {
   const router = useRouter();
+  const { permissions } = getAuthCredentials();
+  const { data: me } = useMeQuery();
   const { locale } = useRouter();
   const {
     query: { shop },
@@ -79,17 +89,26 @@ export default function Orders() {
     setPage(current);
   }
 
+  if (
+    !hasAccess(adminOnly, permissions) &&
+    !me?.shops?.map((shop) => shop.id).includes(shopId) &&
+    me?.managed_shop?.id != shopId
+  ) {
+    router.replace(Routes.dashboard);
+  }
+
   return (
     <>
       <Card className="mb-8 flex flex-col items-center justify-between md:flex-row">
         <div className="mb-4 md:mb-0 md:w-1/4">
-          <h1 className="text-lg font-semibold text-heading">
-            {t('form:input-label-orders')}
-          </h1>
+          <PageHeading title={t('form:input-label-orders')} />
         </div>
 
         <div className="flex w-full flex-col items-center ms-auto md:w-1/2 md:flex-row">
-          <Search onSearch={handleSearch} />
+          <Search
+            onSearch={handleSearch}
+            placeholderText={t('form:input-placeholder-search-tracking-number')}
+          />
         </div>
 
         <Menu

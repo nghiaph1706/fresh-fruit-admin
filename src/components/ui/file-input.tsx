@@ -8,6 +8,7 @@ interface FileInputProps {
   acceptFile?: boolean;
   helperText?: string;
   defaultValue?: any;
+  maxSize?: number;
 }
 
 const FileInput = ({
@@ -16,7 +17,8 @@ const FileInput = ({
   multiple = true,
   acceptFile = false,
   helperText,
-  defaultValue = []
+  defaultValue = [],
+  maxSize,
 }: FileInputProps) => {
   return (
     <Controller
@@ -29,6 +31,7 @@ const FileInput = ({
           multiple={multiple}
           acceptFile={acceptFile}
           helperText={helperText}
+          maxSize={maxSize}
         />
       )}
     />

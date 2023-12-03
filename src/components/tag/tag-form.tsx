@@ -18,6 +18,16 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { tagValidationSchema } from './tag-validation-schema';
 import { useCreateTagMutation, useUpdateTagMutation } from '@/data/tag';
 import { useTypesQuery } from '@/data/type';
+import OpenAIButton from '../openAI/openAI.button';
+import { useSettingsQuery } from '@/data/settings';
+import { useCallback, useMemo, useState } from 'react';
+import { ItemProps } from '@/types';
+import { useModalAction } from '../ui/modal/modal.context';
+import { EditIcon } from '@/components/icons/edit';
+import { Config } from '@/config';
+import { formatSlug } from '@/utils/use-slug';
+import StickyFooterPanel from '@/components/ui/sticky-footer-panel';
+import { TagDetailSuggestions } from '@/components/tag/tag-ai-prompt';
 
 function SelectTypes({
   control,
@@ -68,6 +78,7 @@ export const updatedIcons = tagIcons.map((item: any) => {
 
 type FormValues = {
   name: string;
+  slug: string;
   type: any;
   details: string;
   image: any;
@@ -77,6 +88,7 @@ type FormValues = {
 const defaultValues = {
   image: '',
   name: '',
+  slug: '',
   details: '',
   icon: '',
   type: '',
@@ -89,11 +101,17 @@ export default function CreateOrUpdateTagForm({ initialValues }: IProps) {
   const router = useRouter();
   const { t } = useTranslation();
   const isNewTranslation = router?.query?.action === 'translate';
+  const [isSlugDisable, setIsSlugDisable] = useState<boolean>(true);
+  const isSlugEditable =
+    router?.query?.action === 'edit' &&
+    router?.locale === Config.defaultLanguage;
 
   const {
     register,
     handleSubmit,
     control,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     //@ts-ignore
@@ -114,13 +132,38 @@ export default function CreateOrUpdateTagForm({ initialValues }: IProps) {
     resolver: yupResolver(tagValidationSchema),
   });
 
+  const { openModal } = useModalAction();
+  const { locale } = router;
+  const {
+    // @ts-ignore
+    settings: { options },
+  } = useSettingsQuery({
+    language: locale!,
+  });
+
+  const generateName = watch('name');
+  const tagDetailSuggestionLists = useMemo(() => {
+    return TagDetailSuggestions({ name: generateName ?? '' });
+  }, [generateName]);
+
+  const handleGenerateDescription = useCallback(() => {
+    openModal('GENERATE_DESCRIPTION', {
+      control,
+      name: generateName,
+      set_value: setValue,
+      key: 'details',
+      suggestion: tagDetailSuggestionLists as ItemProps[],
+    });
+  }, [generateName]);
+
   const { mutate: createTag, isLoading: creating } = useCreateTagMutation();
   const { mutate: updateTag, isLoading: updating } = useUpdateTagMutation();
-
+  const slugAutoSuggest = formatSlug(watch('name'));
   const onSubmit = async (values: FormValues) => {
     const input = {
       language: router.locale,
       name: values.name,
+      slug: values.slug,
       details: values.details,
       image: {
         thumbnail: values?.image?.thumbnail,
@@ -185,12 +228,50 @@ export default function CreateOrUpdateTagForm({ initialValues }: IProps) {
             className="mb-5"
           />
 
-          <TextArea
-            label={t('form:input-label-details')}
-            {...register('details')}
-            variant="outline"
-            className="mb-5"
-          />
+          {isSlugEditable ? (
+            <div className="relative mb-5">
+              <Input
+                label={t('form:input-label-slug')}
+                {...register('slug')}
+                error={t(errors.slug?.message!)}
+                variant="outline"
+                disabled={isSlugDisable}
+              />
+              <button
+                className="absolute top-[27px] right-px z-0 flex h-[46px] w-11 items-center justify-center rounded-tr rounded-br border-l border-solid border-border-base bg-white px-2 text-body transition duration-200 hover:text-heading focus:outline-none"
+                type="button"
+                title={t('common:text-edit')}
+                onClick={() => setIsSlugDisable(false)}
+              >
+                <EditIcon width={14} />
+              </button>
+            </div>
+          ) : (
+            <Input
+              label={t('form:input-label-slug')}
+              {...register('slug')}
+              value={slugAutoSuggest}
+              variant="outline"
+              className="mb-5"
+              disabled
+            />
+          )}
+
+          <div className="relative">
+            {options?.useAi && (
+              <OpenAIButton
+                title={t('form:button-label-description-ai')}
+                onClick={handleGenerateDescription}
+              />
+            )}
+
+            <TextArea
+              label={t('form:input-label-details')}
+              {...register('details')}
+              variant="outline"
+              className="mb-5"
+            />
+          </div>
 
           <div className="mb-5">
             <Label>{t('form:input-label-select-icon')}</Label>
@@ -204,24 +285,30 @@ export default function CreateOrUpdateTagForm({ initialValues }: IProps) {
           <SelectTypes control={control} errors={errors} />
         </Card>
       </div>
-      <div className="mb-4 text-end">
-        {initialValues && (
-          <Button
-            variant="outline"
-            onClick={router.back}
-            className="me-4"
-            type="button"
-          >
-            {t('form:button-label-back')}
-          </Button>
-        )}
+      <StickyFooterPanel className="z-0">
+        <div className="text-end">
+          {initialValues && (
+            <Button
+              variant="outline"
+              onClick={router.back}
+              className="text-sm me-4 md:text-base"
+              type="button"
+            >
+              {t('form:button-label-back')}
+            </Button>
+          )}
 
-        <Button loading={creating || updating}>
-          {initialValues
-            ? t('form:button-label-update-tag')
-            : t('form:button-label-add-tag')}
-        </Button>
-      </div>
+          <Button
+            loading={creating || updating}
+            disabled={creating || updating}
+            className="text-sm md:text-base"
+          >
+            {initialValues
+              ? t('form:button-label-update-tag')
+              : t('form:button-label-add-tag')}
+          </Button>
+        </div>
+      </StickyFooterPanel>
     </form>
   );
 }

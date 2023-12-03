@@ -1,18 +1,17 @@
+import { MessageAvatarPlaceholderIcon } from '@/components/icons/message-avatar-placeholder-icon';
+import Button from '@/components/ui/button';
+import ErrorMessage from '@/components/ui/error-message';
 import Select from '@/components/ui/select/select';
+import { useCreateConversations } from '@/data/conversations';
 import { useShopsQuery } from '@/data/shop';
 import { useAdminsQuery } from '@/data/user';
-import { useState } from 'react';
-import { SortOrder } from '@/types';
-import { useTranslation } from 'next-i18next';
-import { Shop } from '@/types';
-import { useCreateConversations } from '@/data/conversations';
-import Button from '@/components/ui/button';
-import { useForm } from 'react-hook-form';
-import Image from 'next/image';
-import isEmpty from 'lodash/isEmpty';
-import ErrorMessage from '@/components/ui/error-message';
+import { Shop, SortOrder } from '@/types';
 import { adminOnly, getAuthCredentials, hasAccess } from '@/utils/auth-utils';
-import { MessageAvatarPlaceholderIcon } from '@/components/icons/message-avatar-placeholder-icon';
+import isEmpty from 'lodash/isEmpty';
+import { useTranslation } from 'next-i18next';
+import Image from 'next/image';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 
 type FormatOptionLabelProps = {
   name: string;
@@ -28,9 +27,9 @@ const formatOptionLabel = ({ logo, name }: FormatOptionLabelProps) => (
         <Image
           src={logo?.thumbnail}
           alt={name}
-          layout="fill"
-          objectFit="contain"
-          className="product-image"
+          className="product-image object-contain"
+          fill
+          sizes="(max-width: 768px) 100vw"
         />
       ) : (
         <MessageAvatarPlaceholderIcon
@@ -103,7 +102,7 @@ const ComposeMessageModal = () => {
         />
         <div className="mt-6 text-right">
           <Button
-            className="h-full px-4 text-base"
+            className="px-4 text-base "
             loading={creating}
             disabled={!!creating || !shop || !Boolean(active)}
           >

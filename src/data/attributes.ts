@@ -1,4 +1,4 @@
-import Router from 'next/router';
+import Router, { useRouter } from 'next/router';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'next-i18next';
@@ -7,14 +7,20 @@ import { API_ENDPOINTS } from './client/api-endpoints';
 import { Attribute, AttributeQueryOptions, GetParams } from '@/types';
 import { attributeClient } from '@/data/client/attribute';
 import { Config } from '@/config';
+import { STORE_OWNER, SUPER_ADMIN } from '@/utils/constants';
+import { getAuthCredentials } from '@/utils/auth-utils';
 
 export const useCreateAttributeMutation = () => {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
 
   return useMutation(attributeClient.create, {
     onSuccess: () => {
-      Router.push(Routes.attribute.list, undefined, {
+      const generateRedirectUrl = router.query.shop
+        ? `/${router.query.shop}${Routes.attribute.list}`
+        : Routes.attribute.list;
+      Router.push(generateRedirectUrl, undefined, {
         locale: Config.defaultLanguage,
       });
       toast.success(t('common:successfully-created'));
