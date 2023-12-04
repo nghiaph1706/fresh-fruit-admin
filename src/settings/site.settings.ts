@@ -1079,18 +1079,18 @@ export const siteSettings = {
         icon: 'MyShopOwnerIcon',
         permissions: ownerAndStaffOnly,
       },
-      {
-        href: Routes?.ownerDashboardMessage,
-        label: 'common:sidebar-nav-item-message',
-        icon: 'ChatOwnerIcon',
-        permissions: ownerAndStaffOnly,
-      },
-      {
-        href: Routes?.ownerDashboardNotice,
-        label: 'common:sidebar-nav-item-store-notice',
-        icon: 'StoreNoticeOwnerIcon',
-        permissions: ownerAndStaffOnly,
-      },
+      // {
+      //   href: Routes?.ownerDashboardMessage,
+      //   label: 'common:sidebar-nav-item-message',
+      //   icon: 'ChatOwnerIcon',
+      //   permissions: ownerAndStaffOnly,
+      // },
+      // {
+      //   href: Routes?.ownerDashboardNotice,
+      //   label: 'common:sidebar-nav-item-store-notice',
+      //   icon: 'StoreNoticeOwnerIcon',
+      //   permissions: ownerAndStaffOnly,
+      // },
     ],
   },
   product: {
