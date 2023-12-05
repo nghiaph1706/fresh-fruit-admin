@@ -26,7 +26,7 @@ const ShopList = () => {
       ) : (
         ''
       )}
-      {!isEmpty(data?.shops) ? (
+      {/* {!isEmpty(data?.shops) ? (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4">
           {data?.shops?.map((myShop: any, idx: number) => (
             <ShopCard shop={myShop} key={idx} />
@@ -34,7 +34,7 @@ const ShopList = () => {
         </div>
       ) : (
         ''
-      )}
+      )} */}
       {!data?.managed_shop && !data?.shops?.length ? (
         <NotFound
           image="/no-shop-found.svg"
