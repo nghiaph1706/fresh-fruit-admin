@@ -44,7 +44,7 @@ export default function RefundDetailsPage() {
   if (loading) return <Loader text={t('common:text-loading')} />;
   if (error) return <ErrorMessage message={error.message} />;
 
-  return <RefundDetailsView refund={data} canChangeStatus={false} />;
+  return <RefundDetailsView refund={data} canChangeStatus={true} />;
 }
 RefundDetailsPage.authenticate = {
   permissions: adminOwnerAndStaffOnly,
