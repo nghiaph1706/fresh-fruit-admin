@@ -82,8 +82,8 @@ export default function CreateOrUpdateProductForm({
     },
     {
       label: 'form:input-label-draft',
-      id: 'draft',
-      value: ProductStatus.Draft,
+    id: 'draft',
+    value: ProductStatus.Draft,
     },
   ];
 
@@ -129,8 +129,8 @@ export default function CreateOrUpdateProductForm({
 
     try {
       if (
-        !initialValues ||
-        !initialValues.translated_languages.includes(router.locale!)
+        !initialValues 
+        // || !initialValues.translated_languages.includes(router.locale!)
       ) {
         //@ts-ignore
         createProduct({

@@ -413,11 +413,11 @@ export const siteSettings = {
             label: 'sidebar-nav-item-reviews',
             icon: 'ReviewIcon',
           },
-          {
-            href: Routes.question.list,
-            label: 'sidebar-nav-item-questions',
-            icon: 'QuestionIcon',
-          },
+          // {
+          //   href: Routes.question.list,
+          //   label: 'sidebar-nav-item-questions',
+          //   icon: 'QuestionIcon',
+          // },
         ],
       },
 
@@ -738,12 +738,12 @@ export const siteSettings = {
             icon: 'ReviewIcon',
             permissions: adminAndOwnerOnly,
           },
-          {
-            href: (shop: string) => `/${shop}${Routes.question.list}`,
-            label: 'sidebar-nav-item-questions',
-            icon: 'QuestionIcon',
-            permissions: adminAndOwnerOnly,
-          },
+          // {
+          //   href: (shop: string) => `/${shop}${Routes.question.list}`,
+          //   label: 'sidebar-nav-item-questions',
+          //   icon: 'QuestionIcon',
+          //   permissions: adminAndOwnerOnly,
+          // },
         ],
       },
 
