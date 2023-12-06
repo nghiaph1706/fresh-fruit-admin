@@ -319,7 +319,7 @@ export default function CreateOrUpdateProductForm({
             </Card>
           </div>
 
-          <div className="my-5 flex flex-wrap border-b border-dashed border-border-base pb-8 sm:my-8">
+          {/* <div className="my-5 flex flex-wrap border-b border-dashed border-border-base pb-8 sm:my-8">
             <Description
               title={t('form:video-title')}
               details={t('form:video-help-text')}
@@ -327,7 +327,6 @@ export default function CreateOrUpdateProductForm({
             />
 
             <Card className="w-full sm:w-8/12 md:w-2/3">
-              {/* Video url picker */}
               <div>
                 {fields?.map((item: any, index: number) => (
                   <div
@@ -372,7 +371,7 @@ export default function CreateOrUpdateProductForm({
                 {t('form:button-label-add-video')}
               </Button>
             </Card>
-          </div>
+          </div> */}
 
           <div className="my-5 flex flex-wrap border-b border-dashed border-border-base pb-8 sm:my-8">
             <Description
@@ -387,8 +386,8 @@ export default function CreateOrUpdateProductForm({
                 error={t((errors?.type as any)?.message)}
               />
               <ProductCategoryInput control={control} setValue={setValue} />
-              <ProductAuthorInput control={control} />
-              <ProductManufacturerInput control={control} setValue={setValue} />
+              {/* <ProductAuthorInput control={control} /> */}
+              {/* <ProductManufacturerInput control={control} setValue={setValue} /> */}
               <ProductTagInput control={control} setValue={setValue} />
             </Card>
           </div>
@@ -493,7 +492,7 @@ export default function CreateOrUpdateProductForm({
             </Card>
           </div>
 
-          {initialValues?.in_flash_sale ? (
+          {/* {initialValues?.in_flash_sale ? (
             <>
               <div className="my-5 flex flex-wrap border-b border-dashed border-border-base pb-8 sm:my-8">
                 <Description
@@ -522,7 +521,7 @@ export default function CreateOrUpdateProductForm({
                 </Card>
               </div>
             </>
-          )}
+          )} */}
 
           <div className="my-5 flex flex-wrap border-b border-dashed border-border-base pb-8 sm:my-8">
             <Description

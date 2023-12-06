@@ -83,7 +83,7 @@ export default function ProductSimpleForm({ initialValues }: IProps) {
           disabled={isTranslateProduct}
         />
 
-        <Input
+        {/* <Input
           label={t('form:input-label-width')}
           {...register('width')}
           error={t(errors.width?.message!)}
@@ -118,7 +118,7 @@ export default function ProductSimpleForm({ initialValues }: IProps) {
           label={t('form:input-label-is-external')}
           disabled={Boolean(is_digital)}
           className="mb-5"
-        />
+        /> */}
 
         {is_digital ? (
           <>
