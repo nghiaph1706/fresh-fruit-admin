@@ -90,8 +90,8 @@ export default function CreateOrUpdateRefundReasonForm({
 
     try {
       if (
-        !initialValues ||
-        !initialValues.translated_languages.includes(router.locale!)
+        !initialValues 
+        // || !initialValues.translated_languages.includes(router.locale!)
       ) {
         createRefundReason({
           ...input,

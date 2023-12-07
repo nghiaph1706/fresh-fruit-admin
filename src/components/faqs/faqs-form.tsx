@@ -100,8 +100,8 @@ export default function CreateOrUpdateFaqsForm({ initialValues }: IProps) {
     };
     try {
       if (
-        !initialValues ||
-        !initialValues.translated_languages.includes(router.locale!)
+        !initialValues 
+        // || !initialValues.translated_languages.includes(router.locale!)
       ) {
         createFAQs({
           ...inputValues,
