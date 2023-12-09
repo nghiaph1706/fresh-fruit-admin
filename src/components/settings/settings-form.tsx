@@ -315,8 +315,8 @@ export default function SettingsForm({
           }))
         : [],
     };
-    const smsEvent = formatEventOptions(values.smsEvent);
-    const emailEvent = formatEventOptions(values.emailEvent);
+    // const smsEvent = formatEventOptions(values.smsEvent);
+    // const emailEvent = formatEventOptions(values.emailEvent);
     updateSettingsMutation({
       language: locale,
       options: {
@@ -343,8 +343,8 @@ export default function SettingsForm({
         taxClass: values?.taxClass?.id,
         shippingClass: values?.shippingClass?.id,
         logo: values?.logo,
-        smsEvent,
-        emailEvent,
+        // smsEvent,
+        // emailEvent,
         contactDetails,
         //@ts-ignore
         seo: {

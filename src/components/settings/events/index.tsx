@@ -70,18 +70,18 @@ export default function EventsSettingsForm({ settings }: IProps) {
 
   // const isNotDefaultSettingsPage = Config.defaultLanguage !== locale;
   async function onSubmit(values: EventFormValues) {
-    const smsEvent = formatEventOptions(values.smsEvent);
-    const emailEvent = formatEventOptions(values.emailEvent);
-    const pushNotification = formatEventOptions(values.pushNotification);
+    // const smsEvent = formatEventOptions(values.smsEvent);
+    // const emailEvent = formatEventOptions(values.emailEvent);
+    // const pushNotification = formatEventOptions(values.pushNotification);
     updateSettingsMutation({
       language: locale,
       // @ts-ignore // // FIXME
       options: {
         ...options,
         ...values,
-        smsEvent,
-        emailEvent,
-        pushNotification,
+        // smsEvent,
+        // emailEvent,
+        // pushNotification,
       },
     });
   }
