@@ -288,23 +288,23 @@ export const siteSettings = {
               },
             ],
           },
-          {
-            href: '',
-            label: 'text-terms-conditions',
-            icon: 'TermsIcon',
-            childMenu: [
-              {
-                href: Routes.termsAndCondition.list,
-                label: 'text-all-terms',
-                icon: 'TermsIcon',
-              },
-              {
-                href: Routes.termsAndCondition.create,
-                label: 'text-new-terms',
-                icon: 'TermsIcon',
-              },
-            ],
-          },
+          // {
+          //   href: '',
+          //   label: 'text-terms-conditions',
+          //   icon: 'TermsIcon',
+          //   childMenu: [
+          //     {
+          //       href: Routes.termsAndCondition.list,
+          //       label: 'text-all-terms',
+          //       icon: 'TermsIcon',
+          //     },
+          //     {
+          //       href: Routes.termsAndCondition.create,
+          //       label: 'text-new-terms',
+          //       icon: 'TermsIcon',
+          //     },
+          //   ],
+          // },
         ],
       },
 
