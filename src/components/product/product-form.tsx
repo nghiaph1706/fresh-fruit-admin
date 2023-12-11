@@ -448,12 +448,12 @@ export default function CreateOrUpdateProductForm({
                 className="mb-5"
               />
               <div className="relative">
-                {options?.useAi && (
+                {/* {options?.useAi && (
                   <OpenAIButton
                     title={t('form:button-label-description-ai')}
                     onClick={handleGenerateDescription}
                   />
-                )}
+                )} */}
                 <TextArea
                   label={t('form:input-label-description')}
                   {...register('description')}
